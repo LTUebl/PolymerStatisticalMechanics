@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polymer Statistical Mechanics &amp; Conformation Simulator | LTU BME 5313</title>
+  <meta name="description" content="Interactive simulator for polymer configurations, microstates, density of states Omega(R), Boltzmann entropy, and end-to-end length based on Jacobs, Huang &amp; Kwon Figure 5.6.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for interactive histograms and force-extension curves -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- KaTeX for crisp textbook mathematics -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Site Header: LTU Experimental Biomechanics Laboratory Branding -->
+  <header class="site-header">
+    <div class="brand-wrapper">
+      <img src="EBLlogo.png" alt="LTU EBL Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://storage.googleapis.com/eblsquattracker/EBLlogo2.png';">
+      <div class="brand-titles">
+        <h1>LTU Cellular Mechanobiology &middot; BME 5313</h1>
+        <p>Polymer Statistical Mechanics &amp; Conformation Simulator &mdash; Jacobs, Huang &amp; Kwon (Fig 5.6)</p>
+      </div>
+    </div>
+    
+    <div class="header-nav">
+      <button class="btn btn-secondary btn-sm" id="btn-open-theory" title="View Textbook Derivation &amp; Theory">
+        <span>&#128214; Theory &amp; Derivation</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-open-quiz" title="Test your understanding with Chapter 5 practice questions">
+        <span>&#9997;&#65039; Practice Quiz</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-export-csv" title="Export current dataset to CSV">
+        <span>&#128229; Export CSV</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-reset-default" title="Reset polymer to textbook Figure 5.6">
+        <span>&#8634; Reset to Fig 5.6</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation Bar -->
+  <nav class="mode-navigation-bar">
+    <button class="nav-tab-btn active" data-mode="explorer" id="tab-btn-explorer">
+      <span>&#128300; Visual Chain Explorer &amp; Builder</span>
+      <span class="nav-tab-badge">Fig 5.6</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="exhaustive" id="tab-btn-exhaustive">
+      <span>&#128202; Exhaustive Density of States &Omega;(R)</span>
+      <span class="nav-tab-badge">4<sup>n</sup> States</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="montecarlo" id="tab-btn-montecarlo">
+      <span>&#127922; Monte Carlo Large Ensemble</span>
+      <span class="nav-tab-badge">N &le; 500</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="mechanics" id="tab-btn-mechanics">
+      <span>&#9889; Entropic Elasticity &amp; Tensile Force</span>
+      <span class="nav-tab-badge">k<sub>B</sub>T</span>
+    </button>
+  </nav>
+
+  <!-- Main 2-Panel Application Grid -->
+  <main class="app-container">
+
+    <!-- ========================================================================= -->
+    <!-- LEFT PANEL: Interactive Polymer Canvas & Real-time Metrics                -->
+    <!-- ========================================================================= -->
+    <section class="panel-card panel-visualizer">
+      <div class="panel-header">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="5" cy="19" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="3"/><path d="M7.5 17.5l2.5-2.5m4-4l2.5-2.5"/></svg>
+          Polymer Chain Canvas
+        </h2>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <label style="font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            <input type="checkbox" id="chk-caliper" checked> Caliper <em>b</em>
+          </label>
+          <label style="font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            <input type="checkbox" id="chk-components" checked> &Delta;X, &Delta;Y
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Canvas Viewport -->
+        <div class="canvas-container" id="canvas-wrapper">
+          <canvas id="polymer-canvas"></canvas>
+
+          <!-- Floating Viewport Controls -->
+          <div class="canvas-floating-controls">
+            <button class="canvas-floating-btn" id="btn-zoom-in" title="Zoom In">+</button>
+            <button class="canvas-floating-btn" id="btn-zoom-out" title="Zoom Out">&minus;</button>
+            <button class="canvas-floating-btn" id="btn-center-view" title="Center View on Polymer">&#10530;</button>
+          </div>
+
+          <!-- Bottom HUD Overlay -->
+          <div class="canvas-hud-overlay">
+            <span id="hud-displacement">&Delta;X = 2.00 b, &Delta;Y = 5.00 b</span>
+            <span id="hud-saw-status" style="color: #4ade80;">&bull; Self-Avoiding (No Overlaps)</span>
+          </div>
+        </div>
+
+        <!-- Real-Time Metrics HUD Ribbon -->
+        <div class="metrics-ribbon">
+          <div class="metric-pill">
+            <span class="metric-label">Links (n)</span>
+            <span class="metric-value" id="val-links-n">9</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Link Length (b)</span>
+            <span class="metric-value" id="val-link-b">1.0 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Contour Length (L)</span>
+            <span class="metric-value" id="val-contour-l">9.0 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill highlight">
+            <span class="metric-label">End-to-End (R)</span>
+            <span class="metric-value" id="val-end-to-end-r">5.39 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Ratio (R / L)</span>
+            <span class="metric-value" id="val-ratio-rl">0.60</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Entropy S/k<sub>B</sub></span>
+            <span class="metric-value" id="val-entropy-s">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- RIGHT PANEL: Contextual Mode Controls, Histograms, and Data Tables         -->
+    <!-- ========================================================================= -->
+    <section class="panel-card panel-controls">
+      
+      <!-- MODE 1: VISUAL CHAIN EXPLORER & BUILDER -->
+      <div class="mode-view" id="view-explorer">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Interactive Chain Builder &amp; Presets
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-text-muted);">Click arrows to extend chain</span>
+        </div>
+
+        <div class="panel-body">
+          <!-- Directional Builder D-Pad -->
+          <div class="builder-dpad-section">
+            <div style="display:flex; flex-direction:column; gap:0.25rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--color-text-main);">Add Next Link:</span>
+              <div class="dpad-buttons">
+                <button class="btn-step-dir" data-dir="R" title="Step Right (+x)"><span>&rarr;</span> Right</button>
+                <button class="btn-step-dir" data-dir="U" title="Step Up (+y)"><span>&uarr;</span> Up</button>
+                <button class="btn-step-dir" data-dir="L" title="Step Left (-x)"><span>&larr;</span> Left</button>
+                <button class="btn-step-dir" data-dir="D" title="Step Down (-y)"><span>&darr;</span> Down</button>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.4rem;">
+              <button class="btn btn-outline btn-sm" id="btn-undo-link" title="Remove last link">&larr; Undo</button>
+              <button class="btn btn-outline btn-sm" id="btn-clear-chain" title="Clear all links">Clear</button>
+            </div>
+          </div>
+
+          <!-- Step History Sequence -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <span style="font-size:0.74rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase;">Sequence of Hinges (Directions):</span>
+              <span id="step-counter-text" style="font-size:0.75rem; font-family:var(--font-mono); color:var(--color-primary-dark);">9 links</span>
+            </div>
+            <div class="step-history-strip" id="step-history-strip">
+              <!-- Dynamically populated with step chips -->
+            </div>
+          </div>
+
+          <!-- Curated Textbook & Physics Presets -->
+          <div>
+            <span style="font-size:0.74rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; display:block; margin-bottom:0.45rem;">Curated Conformation Presets:</span>
+            <div class="preset-button-grid">
+              <button class="btn-preset" id="preset-fig56">
+                <strong>&#128214; Jacobs Fig 5.6</strong>
+                <span>n=9, R = &radic;29 b &approx; 5.39b</span>
+              </button>
+              <button class="btn-preset" id="preset-straight">
+                <strong>&#128207; Fully Extended</strong>
+                <span>R = L = nb (Straight rod)</span>
+              </button>
+              <button class="btn-preset" id="preset-hairpin">
+                <strong>&#128257; Closed Hairpin</strong>
+                <span>R = 0 (Ends meet at origin)</span>
+              </button>
+              <button class="btn-preset" id="preset-staircase">
+                <strong>&#129692; Regular Staircase</strong>
+                <span>Alternating R-U steps</span>
+              </button>
+              <button class="btn-preset" id="preset-random-walk">
+                <strong>&#127922; Random Microstate</strong>
+                <span>Random unbiased 2D walk</span>
+              </button>
+              <button class="btn-preset" id="preset-saw-walk">
+                <strong>&#9889; Random SAW</strong>
+                <span>Self-avoiding polymer walk</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Educational Observation Callout -->
+          <div class="theory-callout" style="margin-top:auto;">
+            <strong>Key Insight (Jacobs Fig 5.6):</strong> The <em>contour length</em> \(L = nb\) is constant for a given polymer, but the <em>end-to-end length</em> \(R\) fluctuates dramatically with conformation. Notice that for the textbook example, \(R = \sqrt{2^2 + 5^2}b = \sqrt{29}b \approx 5.39b < L = 9b\).
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 2: EXHAUSTIVE DENSITY OF STATES OMEGA(R) -->
+      <div class="mode-view" id="view-exhaustive" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            Microcanonical Density of States &Omega;(R)
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-primary-dark); font-weight:600;" id="exhaustive-status-tag">4<sup>4</sup> = 256 States</span>
+        </div>
+
+        <div class="panel-body">
+          <!-- Control Row: Number of Links & SAW toggle -->
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-exhaustive-n">Number of Links (n):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-exhaustive-n" min="1" max="8" value="4" class="range-slider">
+                <span class="badge-value" id="badge-exhaustive-n">4</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+              <label style="font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+                <input type="checkbox" id="chk-exhaustive-saw">
+                <span>Self-Avoiding Walk (SAW) Only</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Chart Controls: Omega vs Prob vs Entropy -->
+          <div class="chart-controls-toolbar">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--color-text-muted);">Y-Axis Variable:</span>
+            <div class="btn-group" id="group-chart-y">
+              <button class="btn-group-item active" data-y="count" title="Number of microstates Omega(R)">&Omega;(R) States</button>
+              <button class="btn-group-item" data-y="prob" title="Probability P(R) = Omega(R) / Total">P(R) Probability</button>
+              <button class="btn-group-item" data-y="entropy" title="Boltzmann Entropy S / k_B = ln(Omega)">S(R) / k<sub>B</sub></button>
+            </div>
+          </div>
+
+          <!-- Chart Container -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-density-states"></canvas>
+          </div>
+
+          <!-- Microstate Gallery Section -->
+          <div class="microstate-gallery-section">
+            <div class="gallery-header">
+              <div>
+                <span style="font-size:0.8rem; font-weight:700; color:var(--color-text-main);">Microstate Gallery</span>
+                <span style="font-size:0.72rem; color:var(--color-text-muted);" id="gallery-subtitle">Click any histogram bar above to inspect conformations for that R</span>
+              </div>
+              <span class="badge-value" id="gallery-count-badge" style="font-size:0.72rem;">0 states</span>
+            </div>
+
+            <div class="gallery-grid" id="gallery-grid">
+              <!-- Dynamically populated thumbnail cards -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 3: MONTE CARLO LARGE ENSEMBLE -->
+      <div class="mode-view" id="view-montecarlo" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            Monte Carlo Large Ensemble Simulation
+          </h2>
+          <button class="btn btn-primary btn-sm" id="btn-run-mc">
+            <span>&#9654; Run Simulation</span>
+          </button>
+        </div>
+
+        <div class="panel-body">
+          <!-- Simulation Parameters -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-mc-n">Links (n):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-mc-n" min="5" max="300" step="5" value="50" class="range-slider">
+                <span class="badge-value" id="badge-mc-n">50</span>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label for="slider-mc-samples">Chains (N):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-mc-samples" min="1000" max="30000" step="1000" value="5000" class="range-slider">
+                <span class="badge-value" id="badge-mc-samples">5,000</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label for="select-mc-model">Chain Model:</label>
+            <select id="select-mc-model" style="padding:0.35rem 0.6rem; border-radius:var(--radius-sm); border:1px solid var(--color-border-dark); font-size:0.8rem; background:#fff; font-family:var(--font-sans);">
+              <option value="2d-lattice" selected>2D Square Lattice Walk (Fig 5.6)</option>
+              <option value="2d-continuous">2D Continuous Freely Jointed Chain (FJC)</option>
+              <option value="3d-continuous">3D Continuous Freely Jointed Chain (FJC)</option>
+              <option value="2d-saw">2D Self-Avoiding Walk (SAW)</option>
+            </select>
+          </div>
+
+          <!-- Histogram vs Theoretical Rayleigh/Maxwell PDF -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-mc-histogram"></canvas>
+          </div>
+
+          <!-- Convergence Metrics Dashboard -->
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; background:var(--color-bg-subtle); padding:0.65rem; border-radius:var(--radius-sm); border:1px solid var(--color-border);">
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Simulated R<sub>rms</sub></span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem;" id="mc-metric-sim-rms">0.00 nm</strong>
+            </div>
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Theoretical &radic;n &middot; b</span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem;" id="mc-metric-theory-rms">0.00 nm</strong>
+            </div>
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Convergence Error</span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem; color:var(--color-success);" id="mc-metric-error">0.0%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 4: ENTROPIC ELASTICITY & TENSILE FORCE -->
+      <div class="mode-view" id="view-mechanics" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Entropic Elasticity &amp; Tensile Force
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-primary-dark); font-weight:600;">Canonical Ensemble</span>
+        </div>
+
+        <div class="panel-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-tensile-force">Tensile Force F<sub>x</sub>:</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-tensile-force" min="0" max="6" step="0.1" value="0.5" class="range-slider">
+                <span class="badge-value" id="badge-tensile-force">0.5 <small>k<sub>B</sub>T/b</small></span>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label for="slider-temperature">Temperature T:</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-temperature" min="200" max="400" step="10" value="300" class="range-slider">
+                <span class="badge-value" id="badge-temperature">300 K</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Force-Extension Curve -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-force-extension"></canvas>
+          </div>
+
+          <div class="theory-callout">
+            <strong>Entropic Spring Constant:</strong> For small extensions, \(F \approx \left(\frac{2 k_B T}{n b^2}\right) \langle X \rangle\). Notice that stiffness <em>increases</em> linearly with temperature \(T\)&mdash;a defining signature of entropic elasticity in biopolymers such as titin, elastin, and rubber!
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: TEXTBOOK THEORY & STATISTICAL MECHANICS DERIVATIONS              -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" id="modal-theory">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>&#128214; Statistical Mechanics Primer &mdash; Jacobs, Huang &amp; Kwon (Chapter 5)</h3>
+        <button class="modal-close-btn" data-close="modal-theory">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="theory-figure-box">
+          <img src="PolymerEndtoEndLengthExample.jpg" alt="Figure 5.6 Model Polymer" class="theory-figure-img">
+          <div>
+            <h4 style="margin-top:0; border:none; padding:0;">Figure 5.6: Model Polymer</h4>
+            <p style="font-size:0.86rem; color:var(--color-text-muted); margin-top:0.35rem;">
+              <em>"The links of size \(b\) are connected to each other by freely rotating hinges. The contour length \(L\) is the length of the polymer if it were completely straight. In this case, if there are \(n\) links, \(L = nb\). The second length is the end-to-end length \(R\), which is the length from one end of the polymer to the other, and depends on the polymer configuration."</em>
+            </p>
+          </div>
+        </div>
+
+        <h4>1. Microstates vs. Macrostates</h4>
+        <p>
+          In statistical mechanics, a <strong>microstate</strong> is an exact, microscopic description of every hinge orientation in the polymer chain. For a two-dimensional square lattice with \(n\) links, each link can point in 4 orthogonal directions (\(\rightarrow, \uparrow, \leftarrow, \downarrow\)), creating a total of:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(\Omega_{total} = 4^n \quad \text{microstates}\)
+        </p>
+        <p>
+          A <strong>macrostate</strong> is defined by macroscopic observables, most notably the end-to-end vector \(\vec{R} = (X, Y)\) and its magnitude \(R = \sqrt{X^2 + Y^2}\).
+        </p>
+
+        <h4>2. Density of States \(\Omega(R)\) &amp; Boltzmann Entropy</h4>
+        <p>
+          The <strong>density of states</strong> \(\Omega(R)\) is the number of distinct microstates that result in an end-to-end length of \(R\). In the microcanonical ensemble (where all microstates are equally likely), the probability of finding the polymer with end-to-end length \(R\) is:
+        </p>
+        <p style="text-align:center; font-size:1.05rem;">
+          \(P(R) = \frac{\Omega(R)}{\Omega_{total}}\)
+        </p>
+        <p>
+          According to Boltzmann's principle, the entropy \(S\) of a macroscopic state with \(\Omega(R)\) microstates is:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(S(R) = k_B \ln \Omega(R)\)
+        </p>
+        <p>
+          The fully extended state (\(R = L = nb\)) has only <strong>4 microstates</strong> (all links right, all up, all left, or all down). Its entropy is minimal (\(S = k_B \ln 4\)). In contrast, coiled conformations with \(R \approx \sqrt{n}b\) have exponentially more microstates, maximizing entropy.
+        </p>
+
+        <h4>3. The Mean Square End-to-End Distance</h4>
+        <p>
+          For an unrestricted ideal random walk of \(n\) steps of length \(b\), the mean square end-to-end distance obeys the fundamental scaling relation:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(\langle R^2 \rangle = n b^2 \implies R_{rms} = \sqrt{\langle R^2 \rangle} = \sqrt{n}\,b\)
+        </p>
+        <p>
+          Notice that while contour length scales linearly with \(n\) (\(L \propto n\)), the typical coil dimension grows only as \(\sqrt{n}\). Therefore, long polymers in solution occupy a much more compact coil than their fully stretched length!
+        </p>
+
+        <h4>4. Entropic Elasticity &amp; Biological Mechanics</h4>
+        <p>
+          Because thermodynamics drives systems toward higher entropy, a polymer pulled into an extended state experiences an <strong>entropic restoring force</strong> attempting to restore its coiled, high-entropy conformation:
+        </p>
+        <p style="text-align:center; font-size:1.05rem;">
+          \(f = -T \frac{\partial S}{\partial R} = \left(\frac{2 k_B T}{n b^2}\right) R = k_{entropic} R\)
+        </p>
+        <p>
+          This entropic elasticity explains the mechanical resilience of cellular structures:
+        </p>
+        <ul style="padding-left:1.5rem; display:flex; flex-direction:column; gap:0.4rem; font-size:0.88rem;">
+          <li><strong>Titin:</strong> The giant sarcomeric protein whose Ig domain unfolding and entropic coiling provides passive elasticity to cardiac and skeletal muscle.</li>
+          <li><strong>Spectrin Network:</strong> The triangular spectrin spring network of red blood cell membranes providing extreme deformability through microcapillaries.</li>
+          <li><strong>Actin Filaments &amp; Microtubules:</strong> Semiflexible polymers governed by persistence length \(L_p\), where thermal bending undulations produce entropic tension.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: INTERACTIVE PRACTICE QUIZ (CHAPTER 5 CONCEPTS)                   -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" id="modal-quiz">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>&#9997;&#65039; Chapter 5 Concept Quiz: Polymer Configurations &amp; Entropy</h3>
+        <button class="modal-close-btn" data-close="modal-quiz">&times;</button>
+      </div>
+      <div class="modal-body" id="quiz-container">
+        <!-- Dynamically injected quiz questions via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <p>
+      &copy; 2026 Lawrence Technological University &middot; Experimental Biomechanics Laboratory (EBL) &middot; Dr. Eric G. Meyer<br>
+      Developed for <strong>BME 5313: Cellular Mechanobiology</strong> &middot; Textbook reference: <em>Introduction to Cell Mechanics and Mechanobiology</em> (Jacobs, Huang, and Kwon).
+    </p>
+  </footer>
+
+  <!-- Main Application Script (ES Module) -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>

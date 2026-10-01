@@ -1,0 +1,3406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polymer Statistical Mechanics &amp; Conformation Simulator | LTU BME 5313</title>
+  <meta name="description" content="Interactive simulator for polymer configurations, microstates, density of states Omega(R), Boltzmann entropy, and end-to-end length based on Jacobs, Huang &amp; Kwon Figure 5.6.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for interactive histograms and force-extension curves -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- KaTeX for crisp textbook mathematics -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <style>
+/* ==========================================================================
+   Polymer Statistical Mechanics & Conformation Simulator
+   Style System - LTU Cellular Mechanobiology & Experimental Biomechanics Lab
+   ========================================================================== */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-serif: 'Times New Roman', Times, Cambria, Georgia, serif;
+
+  --color-primary: #0284c7;
+  --color-primary-dark: #0369a1;
+  --color-primary-light: #e0f2fe;
+  --color-accent: #0ea5e9;
+  
+  --color-bg-site: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-subtle: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-dark: #cbd5e1;
+
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-light: #94a3b8;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-purple: #8b5cf6;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-site);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   Header Styling
+   ========================================================================== */
+.site-header {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #1e293b;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-logo {
+  height: 42px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 2px 6px;
+  object-fit: contain;
+}
+
+.brand-titles h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+}
+
+.brand-titles p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.btn-secondary:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border-dark);
+  color: var(--color-text-main);
+}
+.btn-outline:hover {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   Navigation Tabs
+   ========================================================================== */
+.mode-navigation-bar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.nav-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.nav-tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.nav-tab-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+.nav-tab-btn.active .nav-tab-badge {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+/* ==========================================================================
+   Main Application Layout
+   ========================================================================== */
+.app-container {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  flex: 1;
+  max-width: 1750px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 0.85rem 1.15rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-main);
+}
+
+.panel-body {
+  padding: 1.15rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   Canvas & Viewport
+   ========================================================================== */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.canvas-container:active {
+  cursor: grabbing;
+}
+
+canvas#polymer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.canvas-floating-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--color-border);
+}
+
+.canvas-floating-btn {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+.canvas-floating-btn:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-main);
+}
+
+.canvas-hud-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 1rem;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Metrics HUD Ribbon
+   ========================================================================== */
+.metrics-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.metric-pill {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-top: 0.15rem;
+}
+
+.metric-pill.highlight {
+  background: var(--color-primary-light);
+  border-color: #7dd3fc;
+}
+.metric-pill.highlight .metric-label {
+  color: var(--color-primary-dark);
+}
+.metric-pill.highlight .metric-value {
+  color: var(--color-primary-dark);
+}
+
+/* ==========================================================================
+   Builder Directional Controls
+   ========================================================================== */
+.builder-dpad-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--color-bg-subtle);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.dpad-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btn-step-dir {
+  background: #ffffff;
+  border: 1px solid var(--color-border-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-step-dir:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+.step-history-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 0.35rem 0;
+}
+
+.step-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  background: #ffffff;
+  border: 1px solid var(--color-border-dark);
+  border-radius: 4px;
+  color: var(--color-primary-dark);
+}
+
+/* ==========================================================================
+   Preset Cards / Buttons
+   ========================================================================== */
+.preset-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.btn-preset {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-preset:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.btn-preset strong {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-text-main);
+}
+.btn-preset span {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Chart Panel & Controls
+   ========================================================================== */
+.chart-container-wrapper {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+}
+
+.chart-controls-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.btn-group {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border-dark);
+}
+
+.btn-group .btn-group-item {
+  background: #ffffff;
+  border: none;
+  border-right: 1px solid var(--color-border-dark);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-group .btn-group-item:last-child {
+  border-right: none;
+}
+.btn-group .btn-group-item.active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Microstate Gallery & Cards
+   ========================================================================== */
+.microstate-gallery-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+  gap: 0.5rem;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.microstate-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.microstate-card:hover, .microstate-card.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.microstate-thumb-canvas {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  background: #f8fafc;
+}
+
+.microstate-meta {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  margin-top: 0.3rem;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Sliders & Inputs
+   ========================================================================== */
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.control-row label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.control-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.range-slider {
+  width: 140px;
+  accent-color: var(--color-primary);
+}
+
+.badge-value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  min-width: 48px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Modal Dialogs
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.modal-backdrop.active {
+  display: flex;
+}
+
+.modal-dialog {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 820px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from { transform: translateY(15px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  background: #0f172a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close-btn:hover {
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  line-height: 1.65;
+  font-size: 0.92rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-body h4 {
+  color: var(--color-primary-dark);
+  font-size: 1.05rem;
+  margin-top: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.35rem;
+}
+
+.theory-callout {
+  background: var(--color-primary-light);
+  border-left: 4px solid var(--color-primary);
+  padding: 0.85rem 1rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.88rem;
+}
+
+.theory-figure-box {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  background: var(--color-bg-subtle);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.theory-figure-img {
+  max-width: 200px;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* ==========================================================================
+   Quiz Styles
+   ========================================================================== */
+.quiz-question-card {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-question-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.quiz-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quiz-option-label:hover {
+  border-color: var(--color-primary);
+}
+
+.quiz-feedback {
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  display: none;
+}
+.quiz-feedback.correct {
+  display: block;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+.quiz-feedback.incorrect {
+  display: block;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.site-footer {
+  margin-top: auto;
+  background: #ffffff;
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+</style>
+</head>
+<body>
+
+  <!-- Site Header: LTU Experimental Biomechanics Laboratory Branding -->
+  <header class="site-header">
+    <div class="brand-wrapper">
+      <img src="EBLlogo.png" alt="LTU EBL Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://storage.googleapis.com/eblsquattracker/EBLlogo2.png';">
+      <div class="brand-titles">
+        <h1>LTU Cellular Mechanobiology &middot; BME 5313</h1>
+        <p>Polymer Statistical Mechanics &amp; Conformation Simulator &mdash; Jacobs, Huang &amp; Kwon (Fig 5.6)</p>
+      </div>
+    </div>
+    
+    <div class="header-nav">
+      <button class="btn btn-secondary btn-sm" id="btn-open-theory" title="View Textbook Derivation &amp; Theory">
+        <span>&#128214; Theory &amp; Derivation</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-open-quiz" title="Test your understanding with Chapter 5 practice questions">
+        <span>&#9997;&#65039; Practice Quiz</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-export-csv" title="Export current dataset to CSV">
+        <span>&#128229; Export CSV</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-reset-default" title="Reset polymer to textbook Figure 5.6">
+        <span>&#8634; Reset to Fig 5.6</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation Bar -->
+  <nav class="mode-navigation-bar">
+    <button class="nav-tab-btn active" data-mode="explorer" id="tab-btn-explorer">
+      <span>&#128300; Visual Chain Explorer &amp; Builder</span>
+      <span class="nav-tab-badge">Fig 5.6</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="exhaustive" id="tab-btn-exhaustive">
+      <span>&#128202; Exhaustive Density of States &Omega;(R)</span>
+      <span class="nav-tab-badge">4<sup>n</sup> States</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="montecarlo" id="tab-btn-montecarlo">
+      <span>&#127922; Monte Carlo Large Ensemble</span>
+      <span class="nav-tab-badge">N &le; 500</span>
+    </button>
+    <button class="nav-tab-btn" data-mode="mechanics" id="tab-btn-mechanics">
+      <span>&#9889; Entropic Elasticity &amp; Tensile Force</span>
+      <span class="nav-tab-badge">k<sub>B</sub>T</span>
+    </button>
+  </nav>
+
+  <!-- Main 2-Panel Application Grid -->
+  <main class="app-container">
+
+    <!-- ========================================================================= -->
+    <!-- LEFT PANEL: Interactive Polymer Canvas & Real-time Metrics                -->
+    <!-- ========================================================================= -->
+    <section class="panel-card panel-visualizer">
+      <div class="panel-header">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="5" cy="19" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="3"/><path d="M7.5 17.5l2.5-2.5m4-4l2.5-2.5"/></svg>
+          Polymer Chain Canvas
+        </h2>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <label style="font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            <input type="checkbox" id="chk-caliper" checked> Caliper <em>b</em>
+          </label>
+          <label style="font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+            <input type="checkbox" id="chk-components" checked> &Delta;X, &Delta;Y
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Canvas Viewport -->
+        <div class="canvas-container" id="canvas-wrapper">
+          <canvas id="polymer-canvas"></canvas>
+
+          <!-- Floating Viewport Controls -->
+          <div class="canvas-floating-controls">
+            <button class="canvas-floating-btn" id="btn-zoom-in" title="Zoom In">+</button>
+            <button class="canvas-floating-btn" id="btn-zoom-out" title="Zoom Out">&minus;</button>
+            <button class="canvas-floating-btn" id="btn-center-view" title="Center View on Polymer">&#10530;</button>
+          </div>
+
+          <!-- Bottom HUD Overlay -->
+          <div class="canvas-hud-overlay">
+            <span id="hud-displacement">&Delta;X = 2.00 b, &Delta;Y = 5.00 b</span>
+            <span id="hud-saw-status" style="color: #4ade80;">&bull; Self-Avoiding (No Overlaps)</span>
+          </div>
+        </div>
+
+        <!-- Real-Time Metrics HUD Ribbon -->
+        <div class="metrics-ribbon">
+          <div class="metric-pill">
+            <span class="metric-label">Links (n)</span>
+            <span class="metric-value" id="val-links-n">9</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Link Length (b)</span>
+            <span class="metric-value" id="val-link-b">1.0 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Contour Length (L)</span>
+            <span class="metric-value" id="val-contour-l">9.0 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill highlight">
+            <span class="metric-label">End-to-End (R)</span>
+            <span class="metric-value" id="val-end-to-end-r">5.39 <small style="font-size:0.75rem;">nm</small></span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Ratio (R / L)</span>
+            <span class="metric-value" id="val-ratio-rl">0.60</span>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-label">Entropy S/k<sub>B</sub></span>
+            <span class="metric-value" id="val-entropy-s">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- RIGHT PANEL: Contextual Mode Controls, Histograms, and Data Tables         -->
+    <!-- ========================================================================= -->
+    <section class="panel-card panel-controls">
+      
+      <!-- MODE 1: VISUAL CHAIN EXPLORER & BUILDER -->
+      <div class="mode-view" id="view-explorer">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Interactive Chain Builder &amp; Presets
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-text-muted);">Click arrows to extend chain</span>
+        </div>
+
+        <div class="panel-body">
+          <!-- Directional Builder D-Pad -->
+          <div class="builder-dpad-section">
+            <div style="display:flex; flex-direction:column; gap:0.25rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--color-text-main);">Add Next Link:</span>
+              <div class="dpad-buttons">
+                <button class="btn-step-dir" data-dir="R" title="Step Right (+x)"><span>&rarr;</span> Right</button>
+                <button class="btn-step-dir" data-dir="U" title="Step Up (+y)"><span>&uarr;</span> Up</button>
+                <button class="btn-step-dir" data-dir="L" title="Step Left (-x)"><span>&larr;</span> Left</button>
+                <button class="btn-step-dir" data-dir="D" title="Step Down (-y)"><span>&darr;</span> Down</button>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.4rem;">
+              <button class="btn btn-outline btn-sm" id="btn-undo-link" title="Remove last link">&larr; Undo</button>
+              <button class="btn btn-outline btn-sm" id="btn-clear-chain" title="Clear all links">Clear</button>
+            </div>
+          </div>
+
+          <!-- Step History Sequence -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <span style="font-size:0.74rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase;">Sequence of Hinges (Directions):</span>
+              <span id="step-counter-text" style="font-size:0.75rem; font-family:var(--font-mono); color:var(--color-primary-dark);">9 links</span>
+            </div>
+            <div class="step-history-strip" id="step-history-strip">
+              <!-- Dynamically populated with step chips -->
+            </div>
+          </div>
+
+          <!-- Curated Textbook & Physics Presets -->
+          <div>
+            <span style="font-size:0.74rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; display:block; margin-bottom:0.45rem;">Curated Conformation Presets:</span>
+            <div class="preset-button-grid">
+              <button class="btn-preset" id="preset-fig56">
+                <strong>&#128214; Jacobs Fig 5.6</strong>
+                <span>n=9, R = &radic;29 b &approx; 5.39b</span>
+              </button>
+              <button class="btn-preset" id="preset-straight">
+                <strong>&#128207; Fully Extended</strong>
+                <span>R = L = nb (Straight rod)</span>
+              </button>
+              <button class="btn-preset" id="preset-hairpin">
+                <strong>&#128257; Closed Hairpin</strong>
+                <span>R = 0 (Ends meet at origin)</span>
+              </button>
+              <button class="btn-preset" id="preset-staircase">
+                <strong>&#129692; Regular Staircase</strong>
+                <span>Alternating R-U steps</span>
+              </button>
+              <button class="btn-preset" id="preset-random-walk">
+                <strong>&#127922; Random Microstate</strong>
+                <span>Random unbiased 2D walk</span>
+              </button>
+              <button class="btn-preset" id="preset-saw-walk">
+                <strong>&#9889; Random SAW</strong>
+                <span>Self-avoiding polymer walk</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Educational Observation Callout -->
+          <div class="theory-callout" style="margin-top:auto;">
+            <strong>Key Insight (Jacobs Fig 5.6):</strong> The <em>contour length</em> \(L = nb\) is constant for a given polymer, but the <em>end-to-end length</em> \(R\) fluctuates dramatically with conformation. Notice that for the textbook example, \(R = \sqrt{2^2 + 5^2}b = \sqrt{29}b \approx 5.39b < L = 9b\).
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 2: EXHAUSTIVE DENSITY OF STATES OMEGA(R) -->
+      <div class="mode-view" id="view-exhaustive" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            Microcanonical Density of States &Omega;(R)
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-primary-dark); font-weight:600;" id="exhaustive-status-tag">4<sup>4</sup> = 256 States</span>
+        </div>
+
+        <div class="panel-body">
+          <!-- Control Row: Number of Links & SAW toggle -->
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-exhaustive-n">Number of Links (n):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-exhaustive-n" min="1" max="8" value="4" class="range-slider">
+                <span class="badge-value" id="badge-exhaustive-n">4</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+              <label style="font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+                <input type="checkbox" id="chk-exhaustive-saw">
+                <span>Self-Avoiding Walk (SAW) Only</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Chart Controls: Omega vs Prob vs Entropy -->
+          <div class="chart-controls-toolbar">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--color-text-muted);">Y-Axis Variable:</span>
+            <div class="btn-group" id="group-chart-y">
+              <button class="btn-group-item active" data-y="count" title="Number of microstates Omega(R)">&Omega;(R) States</button>
+              <button class="btn-group-item" data-y="prob" title="Probability P(R) = Omega(R) / Total">P(R) Probability</button>
+              <button class="btn-group-item" data-y="entropy" title="Boltzmann Entropy S / k_B = ln(Omega)">S(R) / k<sub>B</sub></button>
+            </div>
+          </div>
+
+          <!-- Chart Container -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-density-states"></canvas>
+          </div>
+
+          <!-- Microstate Gallery Section -->
+          <div class="microstate-gallery-section">
+            <div class="gallery-header">
+              <div>
+                <span style="font-size:0.8rem; font-weight:700; color:var(--color-text-main);">Microstate Gallery</span>
+                <span style="font-size:0.72rem; color:var(--color-text-muted);" id="gallery-subtitle">Click any histogram bar above to inspect conformations for that R</span>
+              </div>
+              <span class="badge-value" id="gallery-count-badge" style="font-size:0.72rem;">0 states</span>
+            </div>
+
+            <div class="gallery-grid" id="gallery-grid">
+              <!-- Dynamically populated thumbnail cards -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 3: MONTE CARLO LARGE ENSEMBLE -->
+      <div class="mode-view" id="view-montecarlo" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            Monte Carlo Large Ensemble Simulation
+          </h2>
+          <button class="btn btn-primary btn-sm" id="btn-run-mc">
+            <span>&#9654; Run Simulation</span>
+          </button>
+        </div>
+
+        <div class="panel-body">
+          <!-- Simulation Parameters -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-mc-n">Links (n):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-mc-n" min="5" max="300" step="5" value="50" class="range-slider">
+                <span class="badge-value" id="badge-mc-n">50</span>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label for="slider-mc-samples">Chains (N):</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-mc-samples" min="1000" max="30000" step="1000" value="5000" class="range-slider">
+                <span class="badge-value" id="badge-mc-samples">5,000</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label for="select-mc-model">Chain Model:</label>
+            <select id="select-mc-model" style="padding:0.35rem 0.6rem; border-radius:var(--radius-sm); border:1px solid var(--color-border-dark); font-size:0.8rem; background:#fff; font-family:var(--font-sans);">
+              <option value="2d-lattice" selected>2D Square Lattice Walk (Fig 5.6)</option>
+              <option value="2d-continuous">2D Continuous Freely Jointed Chain (FJC)</option>
+              <option value="3d-continuous">3D Continuous Freely Jointed Chain (FJC)</option>
+              <option value="2d-saw">2D Self-Avoiding Walk (SAW)</option>
+            </select>
+          </div>
+
+          <!-- Histogram vs Theoretical Rayleigh/Maxwell PDF -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-mc-histogram"></canvas>
+          </div>
+
+          <!-- Convergence Metrics Dashboard -->
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; background:var(--color-bg-subtle); padding:0.65rem; border-radius:var(--radius-sm); border:1px solid var(--color-border);">
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Simulated R<sub>rms</sub></span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem;" id="mc-metric-sim-rms">0.00 nm</strong>
+            </div>
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Theoretical &radic;n &middot; b</span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem;" id="mc-metric-theory-rms">0.00 nm</strong>
+            </div>
+            <div>
+              <span style="font-size:0.7rem; color:var(--color-text-muted); display:block;">Convergence Error</span>
+              <strong style="font-family:var(--font-mono); font-size:0.95rem; color:var(--color-success);" id="mc-metric-error">0.0%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 4: ENTROPIC ELASTICITY & TENSILE FORCE -->
+      <div class="mode-view" id="view-mechanics" style="display:none;">
+        <div class="panel-header">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Entropic Elasticity &amp; Tensile Force
+          </h2>
+          <span style="font-size:0.75rem; color:var(--color-primary-dark); font-weight:600;">Canonical Ensemble</span>
+        </div>
+
+        <div class="panel-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div class="control-row">
+              <label for="slider-tensile-force">Tensile Force F<sub>x</sub>:</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-tensile-force" min="0" max="6" step="0.1" value="0.5" class="range-slider">
+                <span class="badge-value" id="badge-tensile-force">0.5 <small>k<sub>B</sub>T/b</small></span>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label for="slider-temperature">Temperature T:</label>
+              <div class="control-input-group">
+                <input type="range" id="slider-temperature" min="200" max="400" step="10" value="300" class="range-slider">
+                <span class="badge-value" id="badge-temperature">300 K</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Force-Extension Curve -->
+          <div class="chart-container-wrapper">
+            <canvas id="chart-force-extension"></canvas>
+          </div>
+
+          <div class="theory-callout">
+            <strong>Entropic Spring Constant:</strong> For small extensions, \(F \approx \left(\frac{2 k_B T}{n b^2}\right) \langle X \rangle\). Notice that stiffness <em>increases</em> linearly with temperature \(T\)&mdash;a defining signature of entropic elasticity in biopolymers such as titin, elastin, and rubber!
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: TEXTBOOK THEORY & STATISTICAL MECHANICS DERIVATIONS              -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" id="modal-theory">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>&#128214; Statistical Mechanics Primer &mdash; Jacobs, Huang &amp; Kwon (Chapter 5)</h3>
+        <button class="modal-close-btn" data-close="modal-theory">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="theory-figure-box">
+          <img src="PolymerEndtoEndLengthExample.jpg" alt="Figure 5.6 Model Polymer" class="theory-figure-img">
+          <div>
+            <h4 style="margin-top:0; border:none; padding:0;">Figure 5.6: Model Polymer</h4>
+            <p style="font-size:0.86rem; color:var(--color-text-muted); margin-top:0.35rem;">
+              <em>"The links of size \(b\) are connected to each other by freely rotating hinges. The contour length \(L\) is the length of the polymer if it were completely straight. In this case, if there are \(n\) links, \(L = nb\). The second length is the end-to-end length \(R\), which is the length from one end of the polymer to the other, and depends on the polymer configuration."</em>
+            </p>
+          </div>
+        </div>
+
+        <h4>1. Microstates vs. Macrostates</h4>
+        <p>
+          In statistical mechanics, a <strong>microstate</strong> is an exact, microscopic description of every hinge orientation in the polymer chain. For a two-dimensional square lattice with \(n\) links, each link can point in 4 orthogonal directions (\(\rightarrow, \uparrow, \leftarrow, \downarrow\)), creating a total of:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(\Omega_{total} = 4^n \quad \text{microstates}\)
+        </p>
+        <p>
+          A <strong>macrostate</strong> is defined by macroscopic observables, most notably the end-to-end vector \(\vec{R} = (X, Y)\) and its magnitude \(R = \sqrt{X^2 + Y^2}\).
+        </p>
+
+        <h4>2. Density of States \(\Omega(R)\) &amp; Boltzmann Entropy</h4>
+        <p>
+          The <strong>density of states</strong> \(\Omega(R)\) is the number of distinct microstates that result in an end-to-end length of \(R\). In the microcanonical ensemble (where all microstates are equally likely), the probability of finding the polymer with end-to-end length \(R\) is:
+        </p>
+        <p style="text-align:center; font-size:1.05rem;">
+          \(P(R) = \frac{\Omega(R)}{\Omega_{total}}\)
+        </p>
+        <p>
+          According to Boltzmann's principle, the entropy \(S\) of a macroscopic state with \(\Omega(R)\) microstates is:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(S(R) = k_B \ln \Omega(R)\)
+        </p>
+        <p>
+          The fully extended state (\(R = L = nb\)) has only <strong>4 microstates</strong> (all links right, all up, all left, or all down). Its entropy is minimal (\(S = k_B \ln 4\)). In contrast, coiled conformations with \(R \approx \sqrt{n}b\) have exponentially more microstates, maximizing entropy.
+        </p>
+
+        <h4>3. The Mean Square End-to-End Distance</h4>
+        <p>
+          For an unrestricted ideal random walk of \(n\) steps of length \(b\), the mean square end-to-end distance obeys the fundamental scaling relation:
+        </p>
+        <p style="text-align:center; font-size:1.05rem; font-weight:700;">
+          \(\langle R^2 \rangle = n b^2 \implies R_{rms} = \sqrt{\langle R^2 \rangle} = \sqrt{n}\,b\)
+        </p>
+        <p>
+          Notice that while contour length scales linearly with \(n\) (\(L \propto n\)), the typical coil dimension grows only as \(\sqrt{n}\). Therefore, long polymers in solution occupy a much more compact coil than their fully stretched length!
+        </p>
+
+        <h4>4. Entropic Elasticity &amp; Biological Mechanics</h4>
+        <p>
+          Because thermodynamics drives systems toward higher entropy, a polymer pulled into an extended state experiences an <strong>entropic restoring force</strong> attempting to restore its coiled, high-entropy conformation:
+        </p>
+        <p style="text-align:center; font-size:1.05rem;">
+          \(f = -T \frac{\partial S}{\partial R} = \left(\frac{2 k_B T}{n b^2}\right) R = k_{entropic} R\)
+        </p>
+        <p>
+          This entropic elasticity explains the mechanical resilience of cellular structures:
+        </p>
+        <ul style="padding-left:1.5rem; display:flex; flex-direction:column; gap:0.4rem; font-size:0.88rem;">
+          <li><strong>Titin:</strong> The giant sarcomeric protein whose Ig domain unfolding and entropic coiling provides passive elasticity to cardiac and skeletal muscle.</li>
+          <li><strong>Spectrin Network:</strong> The triangular spectrin spring network of red blood cell membranes providing extreme deformability through microcapillaries.</li>
+          <li><strong>Actin Filaments &amp; Microtubules:</strong> Semiflexible polymers governed by persistence length \(L_p\), where thermal bending undulations produce entropic tension.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: INTERACTIVE PRACTICE QUIZ (CHAPTER 5 CONCEPTS)                   -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" id="modal-quiz">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>&#9997;&#65039; Chapter 5 Concept Quiz: Polymer Configurations &amp; Entropy</h3>
+        <button class="modal-close-btn" data-close="modal-quiz">&times;</button>
+      </div>
+      <div class="modal-body" id="quiz-container">
+        <!-- Dynamically injected quiz questions via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <p>
+      &copy; 2026 Lawrence Technological University &middot; Experimental Biomechanics Laboratory (EBL) &middot; Dr. Eric G. Meyer<br>
+      Developed for <strong>BME 5313: Cellular Mechanobiology</strong> &middot; Textbook reference: <em>Introduction to Cell Mechanics and Mechanobiology</em> (Jacobs, Huang, and Kwon).
+    </p>
+  </footer>
+
+  <!-- Main Application Script (ES Module) -->
+  <script>
+
+// ==========================================
+// Bundled Polymer Statistical Mechanics Engine
+// ==========================================
+/**
+ * Polymer Statistical Mechanics Engine
+ * Jacobs, Huang, and Kwon - Chapter 5: Statistical Mechanics Primer
+ * 
+ * Provides:
+ * 1. 2D Square Lattice polymer enumeration & metrics (Fig 5.6 model)
+ * 2. 1D Polymer walk (Straight vs Hairpin / Forward vs Backward)
+ * 3. Continuous 2D / 3D Freely Jointed Chain (FJC) Monte Carlo
+ * 4. Self-Avoiding Walk (SAW) exclusion
+ * 5. Density of States Omega(R), Probability P(R), Boltzmann Entropy S(R)
+ * 6. Tensile force-extension & canonical ensemble Boltzmann weighting
+ */
+
+const DIRECTIONS_2D = [
+  { name: 'Right', symbol: '→', dx: 1, dy: 0, code: 'R' },
+  { name: 'Up',    symbol: '↑', dx: 0, dy: 1, code: 'U' },
+  { name: 'Left',  symbol: '←', dx: -1, dy: 0, code: 'L' },
+  { name: 'Down',  symbol: '↓', dx: 0, dy: -1, code: 'D' }
+];
+
+const DIR_LOOKUP = {
+  'R': { dx: 1, dy: 0, symbol: '→' },
+  'U': { dx: 0, dy: 1, symbol: '↑' },
+  'L': { dx: -1, dy: 0, symbol: '←' },
+  'D': { dx: 0, dy: -1, symbol: '↓' }
+};
+
+/**
+ * Evaluates a single polymer walk configuration
+ * @param {Array<string|object>} steps - Array of direction codes ('R','U','L','D') or objects with dx, dy
+ * @param {number} b - Link length (nm or arbitrary units, default 1)
+ * @returns {object} Geometric & topological metrics
+ */
+function evaluatePolymerWalk(steps, b = 1.0) {
+  const coords = [{ x: 0, y: 0 }];
+  let curX = 0;
+  let curY = 0;
+  let isSaw = true;
+  const visited = new Set(['0,0']);
+  const selfIntersections = [];
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const dx = typeof s === 'string' ? DIR_LOOKUP[s].dx : s.dx;
+    const dy = typeof s === 'string' ? DIR_LOOKUP[s].dy : s.dy;
+
+    curX += dx * b;
+    curY += dy * b;
+
+    const key = `${Math.round(curX * 1e4) / 1e4},${Math.round(curY * 1e4) / 1e4}`;
+    if (visited.has(key)) {
+      isSaw = false;
+      selfIntersections.push({ x: curX, y: curY, stepIndex: i + 1 });
+    }
+    visited.add(key);
+    coords.push({ x: curX, y: curY });
+  }
+
+  const n = steps.length;
+  const contourLength = n * b;
+  const endX = curX;
+  const endY = curY;
+  const r2 = endX * endX + endY * endY;
+  const endToEndLength = Math.sqrt(r2);
+  const extensionRatio = contourLength > 0 ? endToEndLength / contourLength : 0;
+
+  return {
+    n,
+    b,
+    coords,
+    contourLength,
+    endX,
+    endY,
+    endToEndLength,
+    r2,
+    extensionRatio,
+    isSaw,
+    selfIntersections
+  };
+}
+
+/**
+ * Exhaustively enumerates all 4^n microstates for small 2D lattice polymer chains
+ * @param {number} n - Number of links (typically 1 to 8)
+ * @param {number} b - Link length
+ * @param {boolean} filterSaw - If true, only include self-avoiding walks
+ * @returns {object} Microstates array, Density of States histogram, and ensemble averages
+ */
+function enumerate2DLattice(n, b = 1.0, filterSaw = false) {
+  const microstates = [];
+  const rGroupMap = new Map(); // key: rounded R -> array of states
+  const r2GroupMap = new Map();
+
+  function recurse(currentSteps, currentX, currentY, visitedCoords) {
+    if (currentSteps.length === n) {
+      const r2 = currentX * currentX + currentY * currentY;
+      const r = Math.sqrt(r2);
+      const roundedR = Math.round(r * 1e4) / 1e4;
+      const roundedR2 = Math.round(r2 * 1e4) / 1e4;
+
+      const state = {
+        id: microstates.length,
+        steps: [...currentSteps],
+        x: currentX,
+        y: currentY,
+        r,
+        r2,
+        roundedR,
+        roundedR2,
+        isSaw: visitedCoords.size === n + 1
+      };
+
+      if (!filterSaw || state.isSaw) {
+        microstates.push(state);
+
+        if (!rGroupMap.has(roundedR)) {
+          rGroupMap.set(roundedR, []);
+        }
+        rGroupMap.get(roundedR).push(state);
+
+        if (!r2GroupMap.has(roundedR2)) {
+          r2GroupMap.set(roundedR2, []);
+        }
+        r2GroupMap.get(roundedR2).push(state);
+      }
+      return;
+    }
+
+    for (let d = 0; d < DIRECTIONS_2D.length; d++) {
+      const dir = DIRECTIONS_2D[d];
+      const nextX = currentX + dir.dx * b;
+      const nextY = currentY + dir.dy * b;
+      const key = `${Math.round(nextX * 1e4) / 1e4},${Math.round(nextY * 1e4) / 1e4}`;
+
+      if (filterSaw && visitedCoords.has(key)) {
+        continue; // Prune non-self-avoiding branches early for speed
+      }
+
+      const nextVisited = new Set(visitedCoords);
+      nextVisited.add(key);
+
+      currentSteps.push(dir.code);
+      recurse(currentSteps, nextX, nextY, nextVisited);
+      currentSteps.pop();
+    }
+  }
+
+  const initialVisited = new Set(['0,0']);
+  recurse([], 0, 0, initialVisited);
+
+  const totalStates = microstates.length;
+
+  // Build sorted Density of States (DOS) array
+  const sortedRValues = Array.from(rGroupMap.keys()).sort((a, b) => a - b);
+  const densityOfStates = sortedRValues.map(rVal => {
+    const states = rGroupMap.get(rVal);
+    const count = states.length;
+    const probability = totalStates > 0 ? count / totalStates : 0;
+    const entropyOverKb = count > 0 ? Math.log(count) : 0; // S / k_B = ln(Omega)
+
+    return {
+      r: rVal,
+      count, // Omega(R)
+      probability,
+      entropyOverKb,
+      sampleStates: states.slice(0, 24), // store first 24 samples for gallery
+      allStates: states
+    };
+  });
+
+  // Calculate ensemble averages
+  let sumR = 0;
+  let sumR2 = 0;
+  let maxEntropy = 0;
+  let mostProbableR = 0;
+  let maxCount = 0;
+
+  for (const dos of densityOfStates) {
+    sumR += dos.r * dos.count;
+    sumR2 += dos.r * dos.r * dos.count;
+    if (dos.count > maxCount) {
+      maxCount = dos.count;
+      mostProbableR = dos.r;
+      maxEntropy = dos.entropyOverKb;
+    }
+  }
+
+  const meanR = totalStates > 0 ? sumR / totalStates : 0;
+  const meanR2 = totalStates > 0 ? sumR2 / totalStates : 0;
+  const rmsR = Math.sqrt(meanR2);
+  const varianceR = meanR2 - meanR * meanR;
+  const stdDevR = Math.sqrt(Math.max(0, varianceR));
+  const theoreticalIdealRms = Math.sqrt(n) * b;
+
+  return {
+    n,
+    b,
+    filterSaw,
+    totalStates, // Omega_total
+    densityOfStates, // Array of { r, count, probability, entropyOverKb, sampleStates }
+    meanR,
+    meanR2,
+    rmsR,
+    stdDevR,
+    theoreticalIdealRms,
+    mostProbableR,
+    maxCount,
+    maxEntropy,
+    contourLength: n * b,
+    microstates
+  };
+}
+
+/**
+ * Exhaustive enumeration for 1D polymer model (Jacobs Slide 14)
+ * Links either point right (+b) or left (-b) [Straight vs Hairpin]
+ * @param {number} n - Number of links
+ * @param {number} b - Link length
+ */
+function enumerate1DPolymer(n, b = 1.0) {
+  const densityOfStates = [];
+  const totalStates = Math.pow(2, n);
+  let sumR = 0;
+  let sumR2 = 0;
+
+  // Binomial: k steps forward (+b), (n-k) steps backward (-b)
+  // End-to-end position X = (2k - n)*b, R = |X|
+  const rMap = new Map();
+
+  for (let k = 0; k <= n; k++) {
+    const ways = binomialCoeff(n, k);
+    const x = (2 * k - n) * b;
+    const r = Math.abs(x);
+    const roundedR = Math.round(r * 1e4) / 1e4;
+
+    if (!rMap.has(roundedR)) {
+      rMap.set(roundedR, { count: 0, xValues: [] });
+    }
+    const entry = rMap.get(roundedR);
+    entry.count += ways;
+    entry.xValues.push({ k, ways, x });
+  }
+
+  const sortedR = Array.from(rMap.keys()).sort((a, b) => a - b);
+  for (const r of sortedR) {
+    const entry = rMap.get(r);
+    const count = entry.count;
+    const prob = count / totalStates;
+    const entropy = Math.log(count);
+    sumR += r * count;
+    sumR2 += r * r * count;
+
+    densityOfStates.push({
+      r,
+      count,
+      probability: prob,
+      entropyOverKb: entropy,
+      xValues: entry.xValues
+    });
+  }
+
+  const meanR = sumR / totalStates;
+  const meanR2 = sumR2 / totalStates;
+  const rmsR = Math.sqrt(meanR2);
+  const theoreticalIdealRms = Math.sqrt(n) * b;
+
+  return {
+    n,
+    b,
+    totalStates,
+    densityOfStates,
+    meanR,
+    meanR2,
+    rmsR,
+    theoreticalIdealRms,
+    contourLength: n * b
+  };
+}
+
+/**
+ * Fast Monte Carlo Ensemble Simulation for large n (e.g. n = 5 to 500)
+ * @param {object} options - Simulation parameters
+ * @returns {object} Empirical distribution and statistical metrics
+ */
+function runMonteCarloSimulation({
+  n = 20,
+  b = 1.0,
+  samples = 5000,
+  model = '2d-lattice', // '2d-lattice' | '2d-continuous' | '3d-continuous' | '2d-saw'
+  numBins = 30
+}) {
+  const rValues = new Float64Array(samples);
+  const xValues = new Float64Array(samples);
+  const yValues = new Float64Array(samples);
+  let validSamples = 0;
+  let attempts = 0;
+  const maxAttempts = model === '2d-saw' ? samples * 20 : samples;
+
+  let sumR = 0;
+  let sumR2 = 0;
+  let maxR = 0;
+  let minR = Infinity;
+
+  // Single sample trajectory storage for live animation display
+  let lastTrajectory = null;
+
+  while (validSamples < samples && attempts < maxAttempts) {
+    attempts++;
+    let curX = 0;
+    let curY = 0;
+    let curZ = 0;
+    const trajectory = [{ x: 0, y: 0, z: 0 }];
+    let isSaw = true;
+    const visited = model === '2d-saw' ? new Set(['0,0']) : null;
+
+    for (let step = 0; step < n; step++) {
+      let dx = 0;
+      let dy = 0;
+      let dz = 0;
+
+      if (model === '2d-lattice' || model === '2d-saw') {
+        const dir = DIRECTIONS_2D[Math.floor(Math.random() * 4)];
+        dx = dir.dx * b;
+        dy = dir.dy * b;
+      } else if (model === '2d-continuous') {
+        const theta = Math.random() * 2 * Math.PI;
+        dx = b * Math.cos(theta);
+        dy = b * Math.sin(theta);
+      } else if (model === '3d-continuous') {
+        // Uniform sphere sampling
+        const u = Math.random() * 2 - 1;
+        const phi = Math.random() * 2 * Math.PI;
+        const sqrt1u2 = Math.sqrt(1 - u * u);
+        dx = b * sqrt1u2 * Math.cos(phi);
+        dy = b * sqrt1u2 * Math.sin(phi);
+        dz = b * u;
+      }
+
+      curX += dx;
+      curY += dy;
+      curZ += dz;
+
+      if (model === '2d-saw') {
+        const key = `${Math.round(curX * 1e4) / 1e4},${Math.round(curY * 1e4) / 1e4}`;
+        if (visited.has(key)) {
+          isSaw = false;
+          break;
+        }
+        visited.add(key);
+      }
+
+      trajectory.push({ x: curX, y: curY, z: curZ });
+    }
+
+    if (model === '2d-saw' && !isSaw) {
+      continue; // Discard non-SAW walk
+    }
+
+    const r2 = curX * curX + curY * curY + curZ * curZ;
+    const r = Math.sqrt(r2);
+
+    rValues[validSamples] = r;
+    xValues[validSamples] = curX;
+    yValues[validSamples] = curY;
+
+    sumR += r;
+    sumR2 += r2;
+    if (r > maxR) maxR = r;
+    if (r < minR) minR = r;
+
+    lastTrajectory = trajectory;
+    validSamples++;
+  }
+
+  const effectiveSamples = validSamples;
+  const meanR = effectiveSamples > 0 ? sumR / effectiveSamples : 0;
+  const meanR2 = effectiveSamples > 0 ? sumR2 / effectiveSamples : 0;
+  const rmsR = Math.sqrt(meanR2);
+  const theoreticalIdealRms = Math.sqrt(n) * b;
+
+  // Build histogram
+  const contourLength = n * b;
+  const binMax = Math.min(contourLength, Math.max(maxR * 1.05, theoreticalIdealRms * 2.2));
+  const binWidth = binMax / numBins;
+  const bins = [];
+
+  for (let i = 0; i < numBins; i++) {
+    bins.push({
+      binStart: i * binWidth,
+      binEnd: (i + 1) * binWidth,
+      binCenter: (i + 0.5) * binWidth,
+      count: 0,
+      frequency: 0,
+      theoreticalPdf: 0
+    });
+  }
+
+  for (let s = 0; s < effectiveSamples; s++) {
+    const r = rValues[s];
+    let binIdx = Math.floor(r / binWidth);
+    if (binIdx >= numBins) binIdx = numBins - 1;
+    if (binIdx >= 0) bins[binIdx].count++;
+  }
+
+  // Calculate frequencies and theoretical 2D Rayleigh or 3D Maxwell-Boltzmann distribution
+  for (let i = 0; i < numBins; i++) {
+    const bCenter = bins[i].binCenter;
+    bins[i].frequency = effectiveSamples > 0 ? bins[i].count / effectiveSamples : 0;
+
+    if (model === '2d-lattice' || model === '2d-continuous') {
+      // 2D Rayleigh distribution: P(R) = (2R / (n*b^2)) * exp(-R^2 / (n*b^2))
+      const scale = n * b * b;
+      bins[i].theoreticalPdf = (2 * bCenter / scale) * Math.exp(-(bCenter * bCenter) / scale) * binWidth;
+    } else if (model === '3d-continuous') {
+      // 3D Maxwell-like distribution for end-to-end vector magnitude:
+      // P(R) dR = 4*pi*R^2 * (3 / (2*pi*n*b^2))^(3/2) * exp(-3*R^2 / (2*n*b^2)) dR
+      const coeff = Math.pow(3 / (2 * Math.PI * n * b * b), 1.5) * 4 * Math.PI;
+      bins[i].theoreticalPdf = coeff * (bCenter * bCenter) * Math.exp(-3 * bCenter * bCenter / (2 * n * b * b)) * binWidth;
+    } else {
+      // SAW has Flory exponent nu ≈ 0.75 in 2D
+      bins[i].theoreticalPdf = null;
+    }
+  }
+
+  return {
+    n,
+    b,
+    model,
+    samplesRequested: samples,
+    samplesCompleted: effectiveSamples,
+    meanR,
+    meanR2,
+    rmsR,
+    minR,
+    maxR,
+    theoreticalIdealRms,
+    percentDifference: ((rmsR - theoreticalIdealRms) / theoreticalIdealRms) * 100,
+    bins,
+    binWidth,
+    lastTrajectory
+  };
+}
+
+/**
+ * Canonical Ensemble Tensile Force-Extension Simulation
+ * Applies external tensile force Fx along the x-axis with thermal energy k_B * T
+ * Probability of microstate i: P_i = exp(Fx * X_i / (k_B * T)) / Z
+ * @param {Array<object>} microstates - Precomputed microstates from enumerate2DLattice
+ * @param {number} forceUnits - Force in units of (k_B * T / b)
+ * @param {number} tempK - Temperature in Kelvin (default 300K, sets energy scale)
+ * @param {number} b - Link length
+ */
+function evaluateForceExtension(microstates, forceUnits, tempK = 300, b = 1.0) {
+  if (!microstates || microstates.length === 0) return null;
+
+  // Boltzman constant in J/K (not strictly needed if force is in units of k_B*T/b)
+  let sumWeights = 0;
+  let sumWeightedX = 0;
+  let sumWeightedR = 0;
+
+  // For numerical stability with large forces, find max exponent
+  let maxExp = -Infinity;
+  for (let i = 0; i < microstates.length; i++) {
+    const exponent = forceUnits * (microstates[i].x / b);
+    if (exponent > maxExp) maxExp = exponent;
+  }
+
+  for (let i = 0; i < microstates.length; i++) {
+    const st = microstates[i];
+    const weight = Math.exp(forceUnits * (st.x / b) - maxExp);
+    sumWeights += weight;
+    sumWeightedX += st.x * weight;
+    sumWeightedR += st.r * weight;
+  }
+
+  const avgExtensionX = sumWeightedX / sumWeights;
+  const avgR = sumWeightedR / sumWeights;
+  const contourLength = microstates[0].steps.length * b;
+  const relativeExtension = contourLength > 0 ? avgExtensionX / contourLength : 0;
+
+  // Theoretical small-force linear spring constant in 2D:
+  // <X> = (n * b^2 / (2 * k_B * T)) * F  =>  F = (2 * k_B * T / (n * b^2)) * <X>
+  const n = microstates[0].steps.length;
+  const entropicSpringConstant = 2 / (n * b); // in units of (k_B T / b) per b
+
+  return {
+    forceUnits,
+    tempK,
+    avgExtensionX,
+    avgR,
+    relativeExtension,
+    contourLength,
+    n,
+    entropicSpringConstant
+  };
+}
+
+/**
+ * Evaluates the full force-extension curve across multiple forces
+ * @param {Array<object>} microstates - Precomputed states
+ * @param {number} maxForce - Maximum force in units of k_B*T/b
+ * @param {number} steps - Number of curve points
+ */
+function generateForceExtensionCurve(microstates, maxForce = 5.0, steps = 25) {
+  const curve = [];
+  const deltaF = maxForce / steps;
+
+  for (let i = 0; i <= steps; i++) {
+    const f = i * deltaF;
+    const res = evaluateForceExtension(microstates, f);
+    if (res) {
+      curve.push({
+        force: f,
+        extensionX: res.avgExtensionX,
+        relativeExtension: res.relativeExtension,
+        avgR: res.avgR
+      });
+    }
+  }
+
+  return curve;
+}
+
+/**
+ * Binomial coefficient helper: n choose k
+ */
+function binomialCoeff(n, k) {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  let c = 1;
+  for (let i = 1; i <= k; i++) {
+    c = (c * (n - (k - i))) / i;
+  }
+  return c;
+}
+
+
+/**
+ * Polymer Visual Canvas Renderer
+ * Faithfully reproduces the aesthetic of Jacobs, Huang & Kwon Fig 5.6
+ * Supports interactive zoom/pan, hinge dragging, calipers, and microstate thumbnails
+ */
+
+class PolymerRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+
+    // View transform state
+    this.panX = 0;
+    this.panY = 0;
+    this.scale = 40; // pixels per unit b
+    this.dpr = window.devicePixelRatio || 1;
+
+    // Visual configuration
+    this.showGrid = true;
+    this.showAxes = true;
+    this.showNodeIndices = true;
+    this.showComponents = true;
+    this.showCaliper = true;
+    this.caliperLinkIndex = 6; // default on link 7 (0-indexed 6), like Fig 5.6
+    this.highlightIntersections = true;
+
+    // Palette matching Fig 5.6
+    this.colors = {
+      bg: '#ffffff',
+      grid: '#f1f5f9',
+      gridMajor: '#e2e8f0',
+      axis: '#94a3b8',
+      link: '#0284c7', // vibrant textbook blue
+      linkHover: '#38bdf8',
+      hingeFill: '#ffffff',
+      hingeStroke: '#1e293b',
+      originFixture: '#64748b',
+      vectorR: '#475569', // grey/slate dimension arrow
+      vectorArrow: '#334155',
+      caliper: '#334155',
+      text: '#0f172a',
+      textSecondary: '#64748b',
+      clashHalo: '#ef4444'
+    };
+
+    // Interaction state
+    this.isDragging = false;
+    this.dragStart = { x: 0, y: 0 };
+    this.hoveredNodeIndex = -1;
+    this.currentWalk = null;
+
+    this.initEvents();
+  }
+
+  initEvents() {
+    this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+    this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    window.addEventListener('mouseup', () => this.onMouseUp());
+    this.canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
+
+    // Touch support for tablets/smartphones
+    let lastTouchDist = 0;
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        this.isDragging = true;
+        this.dragStart = { x: touch.clientX - rect.left - this.panX, y: touch.clientY - rect.top - this.panY };
+      } else if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      if (e.touches.length === 1 && this.isDragging) {
+        const touch = e.touches[0];
+        this.panX = touch.clientX - rect.left - this.dragStart.x;
+        this.panY = touch.clientY - rect.top - this.dragStart.y;
+        this.render();
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (lastTouchDist > 0) {
+          const factor = dist / lastTouchDist;
+          this.scale = Math.max(10, Math.min(180, this.scale * factor));
+          this.render();
+        }
+        lastTouchDist = dist;
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener('touchend', () => {
+      this.isDragging = false;
+      lastTouchDist = 0;
+    });
+
+    window.addEventListener('resize', () => this.resize());
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * this.dpr;
+    this.canvas.height = rect.height * this.dpr;
+    this.render();
+  }
+
+  onMouseDown(e) {
+    if (e.button === 0) { // left button
+      this.isDragging = true;
+      this.dragStart = { x: e.offsetX - this.panX, y: e.offsetY - this.panY };
+    }
+  }
+
+  onMouseMove(e) {
+    if (this.isDragging) {
+      this.panX = e.offsetX - this.dragStart.x;
+      this.panY = e.offsetY - this.dragStart.y;
+      this.render();
+    } else {
+      this.checkNodeHover(e.offsetX, e.offsetY);
+    }
+  }
+
+  onMouseUp() {
+    this.isDragging = false;
+  }
+
+  onWheel(e) {
+    e.preventDefault();
+    const mouseX = e.offsetX;
+    const mouseY = e.offsetY;
+
+    // Zoom into mouse position
+    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+    const newScale = Math.max(12, Math.min(220, this.scale * zoomFactor));
+
+    // Adjust pan so point under cursor stays stationary
+    this.panX = mouseX - (mouseX - this.panX) * (newScale / this.scale);
+    this.panY = mouseY - (mouseY - this.panY) * (newScale / this.scale);
+    this.scale = newScale;
+
+    this.render();
+  }
+
+  checkNodeHover(mx, my) {
+    if (!this.currentWalk || !this.currentWalk.coords) return;
+    let hovered = -1;
+    const radiusThreshold = 14;
+
+    for (let i = 0; i < this.currentWalk.coords.length; i++) {
+      const pt = this.worldToScreen(this.currentWalk.coords[i].x, this.currentWalk.coords[i].y);
+      const dist = Math.hypot(mx - pt.x, my - pt.y);
+      if (dist <= radiusThreshold) {
+        hovered = i;
+        break;
+      }
+    }
+
+    if (hovered !== this.hoveredNodeIndex) {
+      this.hoveredNodeIndex = hovered;
+      this.canvas.style.cursor = hovered >= 0 ? 'pointer' : 'grab';
+      this.render();
+    }
+  }
+
+  worldToScreen(wx, wy) {
+    // Canvas coordinate system: math Y points up, canvas Y points down
+    return {
+      x: this.panX + wx * this.scale,
+      y: this.panY - wy * this.scale
+    };
+  }
+
+  screenToWorld(sx, sy) {
+    return {
+      x: (sx - this.panX) / this.scale,
+      y: -(sy - this.panY) / this.scale
+    };
+  }
+
+  centerOnPolymer(walk, paddingFactor = 0.25) {
+    if (!walk || !walk.coords || walk.coords.length === 0) return;
+
+    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    for (const pt of walk.coords) {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+      if (pt.y < minY) minY = pt.y;
+      if (pt.y > maxY) maxY = pt.y;
+    }
+
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    const canvasW = this.canvas.width / this.dpr;
+    const canvasH = this.canvas.height / this.dpr;
+
+    const availW = canvasW * (1 - paddingFactor * 2);
+    const availH = canvasH * (1 - paddingFactor * 2);
+
+    const fitScaleX = availW / (spanX + 1.5);
+    const fitScaleY = availH / (spanY + 1.5);
+
+    this.scale = Math.max(15, Math.min(100, Math.min(fitScaleX, fitScaleY)));
+    this.panX = canvasW / 2 - centerX * this.scale;
+    this.panY = canvasH / 2 + centerY * this.scale;
+
+    this.render();
+  }
+
+  setPolymerWalk(walk) {
+    this.currentWalk = walk;
+    this.render();
+  }
+
+  render() {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const dpr = this.dpr;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const cssW = w / dpr;
+    const cssH = h / dpr;
+
+    // Clear background
+    ctx.fillStyle = this.colors.bg;
+    ctx.fillRect(0, 0, cssW, cssH);
+
+    // Draw Grid
+    if (this.showGrid) {
+      this.drawGrid(ctx, cssW, cssH);
+    }
+
+    if (!this.currentWalk || !this.currentWalk.coords || this.currentWalk.coords.length === 0) {
+      ctx.restore();
+      return;
+    }
+
+    const coords = this.currentWalk.coords;
+    const b = this.currentWalk.b || 1.0;
+
+    // 1. Draw Cartesian components of R (dashed lines)
+    if (this.showComponents && coords.length > 1) {
+      this.drawRComponents(ctx, coords);
+    }
+
+    // 2. Draw End-to-End Vector R (arrow + badge)
+    if (coords.length > 1) {
+      this.drawEndToEndVector(ctx, coords);
+    }
+
+    // 3. Draw Links (cyan/blue rods)
+    this.drawLinks(ctx, coords);
+
+    // 4. Draw Caliper Bracket for link size b (Fig 5.6 style)
+    if (this.showCaliper && coords.length > 1) {
+      this.drawCaliper(ctx, coords, b);
+    }
+
+    // 5. Draw Hinges / Nodes (white discs with dark borders)
+    this.drawHinges(ctx, coords);
+
+    // 6. Draw Origin / Fixed Anchor Symbol at (0,0)
+    this.drawOriginAnchor(ctx);
+
+    ctx.restore();
+  }
+
+  drawGrid(ctx, w, h) {
+    ctx.save();
+    const step = this.scale; // grid spacing equals 1 link length b
+    const offsetX = this.panX % step;
+    const offsetY = this.panY % step;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = this.colors.grid;
+
+    ctx.beginPath();
+    for (let x = offsetX; x < w; x += step) {
+      ctx.moveTo(Math.round(x) + 0.5, 0);
+      ctx.lineTo(Math.round(x) + 0.5, h);
+    }
+    for (let y = offsetY; y < h; y += step) {
+      ctx.moveTo(0, Math.round(y) + 0.5);
+      ctx.lineTo(w, Math.round(y) + 0.5);
+    }
+    ctx.stroke();
+
+    // Major Axes (X = 0, Y = 0)
+    if (this.showAxes) {
+      const originScreen = this.worldToScreen(0, 0);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = this.colors.axis;
+
+      // X-axis
+      ctx.beginPath();
+      ctx.moveTo(0, originScreen.y);
+      ctx.lineTo(w, originScreen.y);
+      ctx.stroke();
+
+      // Y-axis
+      ctx.beginPath();
+      ctx.moveTo(originScreen.x, 0);
+      ctx.lineTo(originScreen.x, h);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  drawLinks(ctx, coords) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(4, this.scale * 0.14);
+    ctx.strokeStyle = this.colors.link;
+
+    ctx.beginPath();
+    const p0 = this.worldToScreen(coords[0].x, coords[0].y);
+    ctx.moveTo(p0.x, p0.y);
+
+    for (let i = 1; i < coords.length; i++) {
+      const p = this.worldToScreen(coords[i].x, coords[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawHinges(ctx, coords) {
+    ctx.save();
+    const hingeRadius = Math.max(5, Math.min(10, this.scale * 0.15));
+
+    for (let i = 0; i < coords.length; i++) {
+      const pt = this.worldToScreen(coords[i].x, coords[i].y);
+      const isHovered = (i === this.hoveredNodeIndex);
+      const isOrigin = (i === 0);
+      const isEnd = (i === coords.length - 1);
+
+      // Check if node is part of a self-intersection
+      const isClashing = this.currentWalk.selfIntersections &&
+        this.currentWalk.selfIntersections.some(c => Math.abs(c.x - coords[i].x) < 1e-4 && Math.abs(c.y - coords[i].y) < 1e-4);
+
+      if (isClashing && this.highlightIntersections) {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, hingeRadius + 6, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, hingeRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = isOrigin ? '#10b981' : (isEnd ? '#6366f1' : (isHovered ? this.colors.linkHover : this.colors.hingeFill));
+      ctx.fill();
+
+      ctx.lineWidth = Math.max(1.8, hingeRadius * 0.25);
+      ctx.strokeStyle = this.colors.hingeStroke;
+      ctx.stroke();
+
+      // Node Index label
+      if (this.showNodeIndices) {
+        ctx.font = '600 10px Inter, sans-serif';
+        ctx.fillStyle = this.colors.textSecondary;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(i.toString(), pt.x + hingeRadius + 9, pt.y - hingeRadius - 4);
+      }
+    }
+    ctx.restore();
+  }
+
+  drawOriginAnchor(ctx) {
+    ctx.save();
+    const p0 = this.worldToScreen(0, 0);
+
+    // Anchor base triangle/fixture
+    const sz = 10;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y + 4);
+    ctx.lineTo(p0.x - sz, p0.y + sz + 6);
+    ctx.lineTo(p0.x + sz, p0.y + sz + 6);
+    ctx.closePath();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Ground hatch lines
+    ctx.beginPath();
+    ctx.moveTo(p0.x - sz - 4, p0.y + sz + 6);
+    ctx.lineTo(p0.x + sz + 4, p0.y + sz + 6);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  drawEndToEndVector(ctx, coords) {
+    ctx.save();
+    const pStart = this.worldToScreen(coords[0].x, coords[0].y);
+    const pEnd = this.worldToScreen(coords[coords.length - 1].x, coords[coords.length - 1].y);
+
+    const dx = pEnd.x - pStart.x;
+    const dy = pEnd.y - pStart.y;
+    const screenDist = Math.hypot(dx, dy);
+
+    if (screenDist < 5) {
+      // Loop closed (R ≈ 0)
+      ctx.font = '700 13px Inter, sans-serif';
+      ctx.fillStyle = '#dc2626';
+      ctx.textAlign = 'center';
+      ctx.fillText('R = 0 (Closed Loop)', pStart.x, pStart.y - 18);
+      ctx.restore();
+      return;
+    }
+
+    // Offset vector line slightly parallel so it doesn't overlap polymer links if overlapping
+    const perpX = -dy / screenDist;
+    const perpY = dx / screenDist;
+    const offsetDist = 18;
+
+    const v1 = { x: pStart.x + perpX * offsetDist, y: pStart.y + perpY * offsetDist };
+    const v2 = { x: pEnd.x + perpX * offsetDist, y: pEnd.y + perpY * offsetDist };
+
+    // Leader lines from nodes to measurement line
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(pStart.x, pStart.y);
+    ctx.lineTo(v1.x, v1.y);
+    ctx.moveTo(pEnd.x, pEnd.y);
+    ctx.lineTo(v2.x, v2.y);
+    ctx.stroke();
+
+    // Main dimension arrow line
+    ctx.setLineDash([]);
+    ctx.strokeStyle = this.colors.vectorR;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(v1.x, v1.y);
+    ctx.lineTo(v2.x, v2.y);
+    ctx.stroke();
+
+    // Arrows at both ends (like textbook dimension arrows)
+    this.drawArrowHead(ctx, v2, Math.atan2(v2.y - v1.y, v2.x - v1.x), 10);
+    this.drawArrowHead(ctx, v1, Math.atan2(v1.y - v2.y, v1.x - v2.x), 10);
+
+    // Center Badge with text "R"
+    const midX = (v1.x + v2.x) / 2;
+    const midY = (v1.y + v2.y) / 2;
+
+    const rVal = this.currentWalk.endToEndLength.toFixed(2);
+    const lVal = this.currentWalk.contourLength.toFixed(1);
+    const badgeText = `R = ${rVal} b`;
+
+    ctx.font = 'italic 700 14px "Times New Roman", Times, serif';
+    const textWidth = ctx.measureText(badgeText).width;
+
+    // Badge pill background
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+    ctx.shadowBlur = 4;
+    ctx.fillRect(midX - textWidth / 2 - 8, midY - 11, textWidth + 16, 22);
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(midX - textWidth / 2 - 8, midY - 11, textWidth + 16, 22);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeText, midX, midY);
+
+    ctx.restore();
+  }
+
+  drawRComponents(ctx, coords) {
+    ctx.save();
+    const pStart = this.worldToScreen(coords[0].x, coords[0].y);
+    const pEnd = this.worldToScreen(coords[coords.length - 1].x, coords[coords.length - 1].y);
+    const corner = { x: pEnd.x, y: pStart.y };
+
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.2;
+
+    ctx.beginPath();
+    ctx.moveTo(pStart.x, pStart.y);
+    ctx.lineTo(corner.x, corner.y);
+    ctx.lineTo(pEnd.x, pEnd.y);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  drawCaliper(ctx, coords, b) {
+    // Choose segment to highlight with caliper bracket (default link 7, or fallback to first link)
+    let idx = this.caliperLinkIndex;
+    if (idx >= coords.length - 1) idx = coords.length - 2;
+    if (idx < 0) return;
+
+    const p1 = this.worldToScreen(coords[idx].x, coords[idx].y);
+    const p2 = this.worldToScreen(coords[idx + 1].x, coords[idx + 1].y);
+
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 5) return;
+
+    // Normal vector
+    const nx = -dy / len;
+    const ny = dx / len;
+    const dist = 16;
+    const bracketLen = 6;
+
+    const b1 = { x: p1.x + nx * dist, y: p1.y + ny * dist };
+    const b2 = { x: p2.x + nx * dist, y: p2.y + ny * dist };
+
+    ctx.save();
+    ctx.strokeStyle = this.colors.caliper;
+    ctx.lineWidth = 1.6;
+
+    // Leader ticks
+    ctx.beginPath();
+    ctx.moveTo(b1.x - nx * bracketLen, b1.y - ny * bracketLen);
+    ctx.lineTo(b1.x + nx * bracketLen, b1.y + ny * bracketLen);
+    ctx.moveTo(b2.x - nx * bracketLen, b2.y - ny * bracketLen);
+    ctx.lineTo(b2.x + nx * bracketLen, b2.y + ny * bracketLen);
+
+    // Dimension line
+    ctx.moveTo(b1.x, b1.y);
+    ctx.lineTo(b2.x, b2.y);
+    ctx.stroke();
+
+    // Arrows
+    this.drawArrowHead(ctx, b1, Math.atan2(b1.y - b2.y, b1.x - b2.x), 7);
+    this.drawArrowHead(ctx, b2, Math.atan2(b2.y - b1.y, b2.x - b1.x), 7);
+
+    // Text "b"
+    const midX = (b1.x + b2.x) / 2 + nx * 10;
+    const midY = (b1.y + b2.y) / 2 + ny * 10;
+
+    ctx.font = 'italic 700 15px "Times New Roman", Times, serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('b', midX, midY);
+
+    ctx.restore();
+  }
+
+  drawArrowHead(ctx, pt, angle, size = 9) {
+    ctx.save();
+    ctx.translate(pt.x, pt.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, -size * 0.45);
+    ctx.lineTo(-size * 0.7, 0);
+    ctx.lineTo(-size, size * 0.45);
+    ctx.closePath();
+    ctx.fillStyle = this.colors.vectorArrow;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/**
+ * Helper to render miniature thumbnail previews of a walk on small canvases (e.g. 100x100)
+ */
+function renderThumbnail(canvas, steps, b = 1.0, isSelected = false) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = isSelected ? '#eff6ff' : '#f8fafc';
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = isSelected ? '#3b82f6' : '#e2e8f0';
+  ctx.lineWidth = isSelected ? 2 : 1;
+  ctx.strokeRect(0, 0, w, h);
+
+  // Trace coordinates
+  const DIR_LOOKUP = {
+    'R': { dx: 1, dy: 0 },
+    'U': { dx: 0, dy: 1 },
+    'L': { dx: -1, dy: 0 },
+    'D': { dx: 0, dy: -1 }
+  };
+
+  const coords = [{ x: 0, y: 0 }];
+  let curX = 0, curY = 0;
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+
+  for (const s of steps) {
+    const dir = DIR_LOOKUP[s];
+    curX += dir.dx;
+    curY += dir.dy;
+    if (curX < minX) minX = curX;
+    if (curX > maxX) maxX = curX;
+    if (curY < minY) minY = curY;
+    if (curY > maxY) maxY = curY;
+    coords.push({ x: curX, y: curY });
+  }
+
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+  const padding = 12;
+  const scale = Math.min((w - padding * 2) / (spanX || 1), (h - padding * 2) / (spanY || 1));
+
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  const toScreen = (x, y) => ({
+    x: w / 2 + (x - centerX) * scale,
+    y: h / 2 - (y - centerY) * scale
+  });
+
+  // End-to-end vector (subtle dashed line)
+  const p0 = toScreen(0, 0);
+  const pEnd = toScreen(curX, curY);
+  ctx.setLineDash([2, 2]);
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(pEnd.x, pEnd.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Polymer links
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#0284c7';
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  for (let i = 1; i < coords.length; i++) {
+    const p = toScreen(coords[i].x, coords[i].y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+
+  // Nodes
+  for (let i = 0; i < coords.length; i++) {
+    const p = toScreen(coords[i].x, coords[i].y);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, i === 0 ? 3.5 : (i === coords.length - 1 ? 3.5 : 2.5), 0, 2 * Math.PI);
+    ctx.fillStyle = i === 0 ? '#10b981' : (i === coords.length - 1 ? '#6366f1' : '#ffffff');
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+
+/**
+ * Polymer Statistical Mechanics Application Controller
+ * Handles UI interactions, Chart.js integrations, mode switching,
+ * microstate galleries, and pedagogical quiz.
+ */
+
+
+
+
+
+// Application State
+const state = {
+  activeMode: 'explorer', // 'explorer' | 'exhaustive' | 'montecarlo' | 'mechanics'
+  linkLengthB: 1.0, // in nm
+  
+  // Current active polymer walk (default: Jacobs Fig 5.6)
+  currentSteps: ['R', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'U'],
+  walkEvaluation: null,
+
+  // Mode 2: Exhaustive state
+  exhaustiveN: 4,
+  exhaustiveSawOnly: false,
+  exhaustiveYVar: 'count', // 'count' | 'prob' | 'entropy'
+  exhaustiveData: null,
+  selectedRGroup: null,
+
+  // Mode 3: Monte Carlo state
+  mcN: 50,
+  mcSamples: 5000,
+  mcModel: '2d-lattice',
+  mcData: null,
+
+  // Mode 4: Mechanics state
+  tensileForce: 0.5,
+  temperatureK: 300,
+  mechanicsCurve: null
+};
+
+// Chart.js references
+let chartDensity = null;
+let chartMc = null;
+let chartForceExt = null;
+let renderer = null;
+
+// Initialize on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  initRenderer();
+  initNavigation();
+  initExplorerMode();
+  initExhaustiveMode();
+  initMonteCarloMode();
+  initMechanicsMode();
+  initModals();
+  initQuiz();
+  initExport();
+
+  // Load textbook Figure 5.6 by default
+  loadWalk(state.currentSteps);
+
+  // Render initial KaTeX
+  if (window.renderMathInElement) {
+    window.renderMathInElement(document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '$', right: '$', display: false }
+      ]
+    });
+  }
+});
+
+/* ==========================================================================
+   1. Canvas & Renderer Initialization
+   ========================================================================== */
+function initRenderer() {
+  const canvas = document.getElementById('polymer-canvas');
+  renderer = new PolymerRenderer(canvas);
+  renderer.resize();
+
+  // Toolbar toggles
+  document.getElementById('chk-caliper').addEventListener('change', (e) => {
+    renderer.showCaliper = e.target.checked;
+    renderer.render();
+  });
+
+  document.getElementById('chk-components').addEventListener('change', (e) => {
+    renderer.showComponents = e.target.checked;
+    renderer.render();
+  });
+
+  document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    renderer.scale = Math.min(220, renderer.scale * 1.25);
+    renderer.render();
+  });
+
+  document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    renderer.scale = Math.max(12, renderer.scale * 0.8);
+    renderer.render();
+  });
+
+  document.getElementById('btn-center-view').addEventListener('click', () => {
+    if (state.walkEvaluation) {
+      renderer.centerOnPolymer(state.walkEvaluation);
+    }
+  });
+
+  document.getElementById('btn-reset-default').addEventListener('click', () => {
+    loadWalk(['R', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'U']);
+  });
+}
+
+/* ==========================================================================
+   2. Walk Loader & Metrics HUD Updater
+   ========================================================================== */
+function loadWalk(steps) {
+  state.currentSteps = [...steps];
+  state.walkEvaluation = evaluatePolymerWalk(state.currentSteps, state.linkLengthB);
+
+  // Update Canvas
+  renderer.caliperLinkIndex = Math.min(6, Math.max(0, steps.length - 2));
+  renderer.setPolymerWalk(state.walkEvaluation);
+  renderer.centerOnPolymer(state.walkEvaluation);
+
+  // Update HUD
+  const evalData = state.walkEvaluation;
+  document.getElementById('val-links-n').textContent = evalData.n;
+  document.getElementById('val-link-b').innerHTML = `${evalData.b.toFixed(1)} <small style="font-size:0.75rem;">nm</small>`;
+  document.getElementById('val-contour-l').innerHTML = `${evalData.contourLength.toFixed(1)} <small style="font-size:0.75rem;">nm</small>`;
+  document.getElementById('val-end-to-end-r').innerHTML = `${evalData.endToEndLength.toFixed(2)} <small style="font-size:0.75rem;">nm</small>`;
+  document.getElementById('val-ratio-rl').textContent = evalData.extensionRatio.toFixed(2);
+
+  // Entropy estimation if known
+  document.getElementById('val-entropy-s').textContent = (evalData.n <= 8)
+    ? `${(evalData.n * Math.log(4)).toFixed(1)} (max)`
+    : '&mdash;';
+
+  // HUD bottom overlay
+  const hudDispl = document.getElementById('hud-displacement');
+  hudDispl.textContent = `ΔX = ${evalData.endX.toFixed(2)} b, ΔY = ${evalData.endY.toFixed(2)} b`;
+
+  const hudSaw = document.getElementById('hud-saw-status');
+  if (evalData.isSaw) {
+    hudSaw.textContent = '• Self-Avoiding Walk (No Overlaps)';
+    hudSaw.style.color = '#4ade80';
+  } else {
+    hudSaw.textContent = `⚠ Self-Intersecting (${evalData.selfIntersections.length} overlap${evalData.selfIntersections.length > 1 ? 's' : ''})`;
+    hudSaw.style.color = '#f87171';
+  }
+
+  // Update Step history strip
+  renderStepChips();
+}
+
+function renderStepChips() {
+  const container = document.getElementById('step-history-strip');
+  const counter = document.getElementById('step-counter-text');
+  counter.textContent = `${state.currentSteps.length} links`;
+  container.innerHTML = '';
+
+  state.currentSteps.forEach((step, idx) => {
+    const chip = document.createElement('span');
+    chip.className = 'step-chip';
+    chip.textContent = `${idx + 1}: ${DIR_LOOKUP[step].symbol} ${step}`;
+    chip.title = `Step ${idx + 1}: ${step}`;
+    container.appendChild(chip);
+  });
+}
+
+/* ==========================================================================
+   3. Mode Navigation Tabs
+   ========================================================================== */
+function initNavigation() {
+  const tabBtns = document.querySelectorAll('.nav-tab-btn');
+  const views = {
+    explorer: document.getElementById('view-explorer'),
+    exhaustive: document.getElementById('view-exhaustive'),
+    montecarlo: document.getElementById('view-montecarlo'),
+    mechanics: document.getElementById('view-mechanics')
+  };
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      state.activeMode = mode;
+
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      Object.entries(views).forEach(([k, el]) => {
+        el.style.display = (k === mode) ? 'block' : 'none';
+      });
+
+      // Lazy render chart when tab opens
+      if (mode === 'exhaustive' && !state.exhaustiveData) {
+        updateExhaustiveMode();
+      } else if (mode === 'montecarlo' && !state.mcData) {
+        updateMonteCarloMode();
+      } else if (mode === 'mechanics' && !state.mechanicsCurve) {
+        updateMechanicsMode();
+      }
+    });
+  });
+}
+
+/* ==========================================================================
+   4. Mode 1: Explorer & Builder Controls
+   ========================================================================== */
+function initExplorerMode() {
+  // Step D-pad buttons
+  document.querySelectorAll('.btn-step-dir').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dir = btn.dataset.dir;
+      const nextSteps = [...state.currentSteps, dir];
+      loadWalk(nextSteps);
+    });
+  });
+
+  // Undo button
+  document.getElementById('btn-undo-link').addEventListener('click', () => {
+    if (state.currentSteps.length > 1) {
+      loadWalk(state.currentSteps.slice(0, -1));
+    }
+  });
+
+  // Clear button
+  document.getElementById('btn-clear-chain').addEventListener('click', () => {
+    loadWalk(['R']);
+  });
+
+  // Presets
+  document.getElementById('preset-fig56').addEventListener('click', () => {
+    loadWalk(['R', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'U']);
+  });
+
+  document.getElementById('preset-straight').addEventListener('click', () => {
+    const len = Math.max(6, state.currentSteps.length);
+    loadWalk(Array(len).fill('R'));
+  });
+
+  document.getElementById('preset-hairpin').addEventListener('click', () => {
+    loadWalk(['R', 'R', 'U', 'L', 'L', 'D']);
+  });
+
+  document.getElementById('preset-staircase').addEventListener('click', () => {
+    const steps = [];
+    for (let i = 0; i < 5; i++) {
+      steps.push('R', 'U');
+    }
+    loadWalk(steps);
+  });
+
+  document.getElementById('preset-random-walk').addEventListener('click', () => {
+    const len = Math.max(8, state.currentSteps.length);
+    const dirs = ['R', 'U', 'L', 'D'];
+    const steps = [];
+    for (let i = 0; i < len; i++) {
+      steps.push(dirs[Math.floor(Math.random() * 4)]);
+    }
+    loadWalk(steps);
+  });
+
+  document.getElementById('preset-saw-walk').addEventListener('click', () => {
+    const len = 10;
+    const dirs = ['R', 'U', 'L', 'D'];
+    let attempts = 0;
+    while (attempts < 200) {
+      attempts++;
+      const steps = [];
+      const visited = new Set(['0,0']);
+      let x = 0, y = 0, ok = true;
+      for (let i = 0; i < len; i++) {
+        // filter valid steps
+        const validDirs = dirs.filter(d => {
+          const dl = DIR_LOOKUP[d];
+          const k = `${x + dl.dx},${y + dl.dy}`;
+          return !visited.has(k);
+        });
+        if (validDirs.length === 0) { ok = false; break; }
+        const chosen = validDirs[Math.floor(Math.random() * validDirs.length)];
+        steps.push(chosen);
+        x += DIR_LOOKUP[chosen].dx;
+        y += DIR_LOOKUP[chosen].dy;
+        visited.add(`${x},${y}`);
+      }
+      if (ok) {
+        loadWalk(steps);
+        return;
+      }
+    }
+    loadWalk(['R', 'U', 'R', 'U', 'L', 'U']);
+  });
+}
+
+/* ==========================================================================
+   5. Mode 2: Exhaustive Density of States
+   ========================================================================== */
+function initExhaustiveMode() {
+  const sliderN = document.getElementById('slider-exhaustive-n');
+  const badgeN = document.getElementById('badge-exhaustive-n');
+  const chkSaw = document.getElementById('chk-exhaustive-saw');
+
+  sliderN.addEventListener('input', (e) => {
+    state.exhaustiveN = parseInt(e.target.value, 10);
+    badgeN.textContent = state.exhaustiveN;
+    updateExhaustiveMode();
+  });
+
+  chkSaw.addEventListener('change', (e) => {
+    state.exhaustiveSawOnly = e.target.checked;
+    updateExhaustiveMode();
+  });
+
+  // Y-axis toggle buttons
+  document.querySelectorAll('#group-chart-y .btn-group-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#group-chart-y .btn-group-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.exhaustiveYVar = btn.dataset.y;
+      renderExhaustiveChart();
+    });
+  });
+}
+
+function updateExhaustiveMode() {
+  const n = state.exhaustiveN;
+  const saw = state.exhaustiveSawOnly;
+
+  state.exhaustiveData = enumerate2DLattice(n, state.linkLengthB, saw);
+
+  const statusTag = document.getElementById('exhaustive-status-tag');
+  if (saw) {
+    statusTag.textContent = `${state.exhaustiveData.totalStates} Valid SAW States (n = ${n})`;
+  } else {
+    statusTag.textContent = `4^${n} = ${state.exhaustiveData.totalStates.toLocaleString()} Microstates`;
+  }
+
+  renderExhaustiveChart();
+
+  // Select most probable R group by default
+  const defaultGroup = state.exhaustiveData.densityOfStates.find(d => Math.abs(d.r - state.exhaustiveData.mostProbableR) < 1e-4) ||
+    state.exhaustiveData.densityOfStates[0];
+  selectRGroup(defaultGroup);
+}
+
+function renderExhaustiveChart() {
+  if (!state.exhaustiveData) return;
+
+  const ctx = document.getElementById('chart-density-states').getContext('2d');
+  const dosList = state.exhaustiveData.densityOfStates;
+
+  const labels = dosList.map(d => `${d.r.toFixed(2)} b`);
+  let yData = [];
+  let yLabel = '';
+
+  if (state.exhaustiveYVar === 'count') {
+    yData = dosList.map(d => d.count);
+    yLabel = 'Microstates Ω(R)';
+  } else if (state.exhaustiveYVar === 'prob') {
+    yData = dosList.map(d => d.probability);
+    yLabel = 'Probability P(R)';
+  } else {
+    yData = dosList.map(d => d.entropyOverKb);
+    yLabel = 'Boltzmann Entropy S(R) / kB = ln Ω';
+  }
+
+  const bgColors = dosList.map(d => (state.selectedRGroup && Math.abs(d.r - state.selectedRGroup.r) < 1e-4)
+    ? 'rgba(2, 132, 199, 1.0)'
+    : 'rgba(14, 165, 233, 0.65)'
+  );
+
+  if (chartDensity) {
+    chartDensity.destroy();
+  }
+
+  chartDensity = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: yLabel,
+        data: yData,
+        backgroundColor: bgColors,
+        borderColor: '#0284c7',
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: (evt, elements) => {
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          selectRGroup(dosList[index]);
+          renderExhaustiveChart(); // update highlight color
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => `End-to-End Length R = ${items[0].label}`,
+            label: (item) => {
+              const d = dosList[item.dataIndex];
+              return [
+                `Microstates Ω: ${d.count}`,
+                `Probability P: ${(d.probability * 100).toFixed(2)}%`,
+                `Entropy S/kB: ${d.entropyOverKb.toFixed(2)}`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'End-to-End Distance R (units of b)', font: { weight: '600', size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: yLabel, font: { weight: '600', size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+function selectRGroup(rGroup) {
+  state.selectedRGroup = rGroup;
+  const grid = document.getElementById('gallery-grid');
+  const countBadge = document.getElementById('gallery-count-badge');
+  const subtitle = document.getElementById('gallery-subtitle');
+
+  if (!rGroup) {
+    grid.innerHTML = '<p style="font-size:0.8rem; color:var(--color-text-muted);">No group selected</p>';
+    countBadge.textContent = '0 states';
+    return;
+  }
+
+  countBadge.textContent = `${rGroup.count} state${rGroup.count > 1 ? 's' : ''}`;
+  subtitle.textContent = `Showing sample microstates for R = ${rGroup.r.toFixed(2)} b (P = ${(rGroup.probability * 100).toFixed(1)}%, S/kB = ${rGroup.entropyOverKb.toFixed(2)})`;
+  grid.innerHTML = '';
+
+  const displayStates = rGroup.sampleStates || [];
+  displayStates.forEach((st, idx) => {
+    const card = document.createElement('div');
+    card.className = 'microstate-card';
+    card.title = `Microstate #${st.id + 1}: ${st.steps.join(' ')}`;
+
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.className = 'microstate-thumb-canvas';
+    thumbCanvas.width = 80;
+    thumbCanvas.height = 80;
+
+    renderThumbnail(thumbCanvas, st.steps, state.linkLengthB, false);
+
+    const meta = document.createElement('div');
+    meta.className = 'microstate-meta';
+    meta.textContent = `#${idx + 1} (${st.x},${st.y})`;
+
+    card.appendChild(thumbCanvas);
+    card.appendChild(meta);
+
+    // Clicking a thumbnail loads it into the main canvas visualizer!
+    card.addEventListener('click', () => {
+      loadWalk(st.steps);
+      document.querySelectorAll('.microstate-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+/* ==========================================================================
+   6. Mode 3: Monte Carlo Simulation
+   ========================================================================== */
+function initMonteCarloMode() {
+  const sliderN = document.getElementById('slider-mc-n');
+  const badgeN = document.getElementById('badge-mc-n');
+  const sliderSamples = document.getElementById('slider-mc-samples');
+  const badgeSamples = document.getElementById('badge-mc-samples');
+  const selectModel = document.getElementById('select-mc-model');
+  const btnRun = document.getElementById('btn-run-mc');
+
+  sliderN.addEventListener('input', (e) => {
+    state.mcN = parseInt(e.target.value, 10);
+    badgeN.textContent = state.mcN;
+  });
+
+  sliderSamples.addEventListener('input', (e) => {
+    state.mcSamples = parseInt(e.target.value, 10);
+    badgeSamples.textContent = state.mcSamples.toLocaleString();
+  });
+
+  selectModel.addEventListener('change', (e) => {
+    state.mcModel = e.target.value;
+  });
+
+  btnRun.addEventListener('click', () => {
+    updateMonteCarloMode();
+  });
+}
+
+function updateMonteCarloMode() {
+  state.mcData = runMonteCarloSimulation({
+    n: state.mcN,
+    b: state.linkLengthB,
+    samples: state.mcSamples,
+    model: state.mcModel
+  });
+
+  // Update convergence metrics
+  document.getElementById('mc-metric-sim-rms').textContent = `${state.mcData.rmsR.toFixed(2)} nm`;
+  document.getElementById('mc-metric-theory-rms').textContent = `${state.mcData.theoreticalIdealRms.toFixed(2)} nm`;
+  
+  const errEl = document.getElementById('mc-metric-error');
+  const errVal = state.mcData.percentDifference;
+  errEl.textContent = `${errVal >= 0 ? '+' : ''}${errVal.toFixed(1)}%`;
+  errEl.style.color = Math.abs(errVal) < 5 ? 'var(--color-success)' : 'var(--color-warning)';
+
+  // If last trajectory exists, show it on canvas
+  if (state.mcData.lastTrajectory) {
+    const steps = [];
+    const traj = state.mcData.lastTrajectory;
+    for (let i = 0; i < traj.length - 1; i++) {
+      const dx = traj[i + 1].x - traj[i].x;
+      const dy = traj[i + 1].y - traj[i].y;
+      steps.push({ dx, dy });
+    }
+    // Set custom walk
+    state.walkEvaluation = evaluatePolymerWalk(steps, state.linkLengthB);
+    renderer.setPolymerWalk(state.walkEvaluation);
+    renderer.centerOnPolymer(state.walkEvaluation);
+  }
+
+  renderMonteCarloChart();
+}
+
+function renderMonteCarloChart() {
+  if (!state.mcData) return;
+
+  const ctx = document.getElementById('chart-mc-histogram').getContext('2d');
+  const bins = state.mcData.bins;
+
+  const labels = bins.map(b => b.binCenter.toFixed(1));
+  const simData = bins.map(b => b.frequency);
+  const theoryData = bins.map(b => b.theoreticalPdf);
+
+  if (chartMc) {
+    chartMc.destroy();
+  }
+
+  const datasets = [
+    {
+      type: 'bar',
+      label: 'Monte Carlo Sample Frequency',
+      data: simData,
+      backgroundColor: 'rgba(2, 132, 199, 0.65)',
+      borderColor: '#0284c7',
+      borderWidth: 1,
+      borderRadius: 3
+    }
+  ];
+
+  if (state.mcModel !== '2d-saw') {
+    datasets.push({
+      type: 'line',
+      label: 'Theoretical Continuous PDF',
+      data: theoryData,
+      borderColor: '#ef4444',
+      borderWidth: 2.2,
+      fill: false,
+      pointRadius: 0,
+      tension: 0.3
+    });
+  }
+
+  chartMc = new Chart(ctx, {
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            title: (items) => `End-to-End Length R ≈ ${items[0].label} nm`
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'End-to-End Distance R (nm)', font: { weight: '600', size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Probability Density P(R)', font: { weight: '600', size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+/* ==========================================================================
+   7. Mode 4: Entropic Elasticity & Mechanics
+   ========================================================================== */
+function initMechanicsMode() {
+  const sliderForce = document.getElementById('slider-tensile-force');
+  const badgeForce = document.getElementById('badge-tensile-force');
+  const sliderTemp = document.getElementById('slider-temperature');
+  const badgeTemp = document.getElementById('badge-temperature');
+
+  sliderForce.addEventListener('input', (e) => {
+    state.tensileForce = parseFloat(e.target.value);
+    badgeForce.innerHTML = `${state.tensileForce.toFixed(1)} <small>k<sub>B</sub>T/b</small>`;
+    updateMechanicsMode();
+  });
+
+  sliderTemp.addEventListener('input', (e) => {
+    state.temperatureK = parseInt(e.target.value, 10);
+    badgeTemp.textContent = `${state.temperatureK} K`;
+    updateMechanicsMode();
+  });
+}
+
+function updateMechanicsMode() {
+  // Use small chain states for exact canonical ensemble
+  const baseEnum = state.exhaustiveData || enumerate2DLattice(4, state.linkLengthB, false);
+  state.mechanicsCurve = generateForceExtensionCurve(baseEnum.microstates, 6.0, 30);
+
+  renderForceExtensionChart();
+}
+
+function renderForceExtensionChart() {
+  if (!state.mechanicsCurve) return;
+
+  const ctx = document.getElementById('chart-force-extension').getContext('2d');
+  const labels = state.mechanicsCurve.map(pt => pt.force.toFixed(1));
+  const extData = state.mechanicsCurve.map(pt => pt.relativeExtension);
+
+  if (chartForceExt) {
+    chartForceExt.destroy();
+  }
+
+  chartForceExt = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Relative Extension ⟨X⟩ / L',
+          data: extData,
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.1)',
+          fill: true,
+          borderWidth: 2.5,
+          tension: 0.2,
+          pointRadius: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            title: (items) => `Tensile Force F = ${items[0].label} (kB T / b)`,
+            label: (item) => `Relative Extension: ${(item.raw * 100).toFixed(1)}% of L`
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Applied Tensile Force F / (k_B T / b)', font: { weight: '600', size: 11 } }
+        },
+        y: {
+          min: 0,
+          max: 1.05,
+          title: { display: true, text: 'Normalized Extension ⟨X⟩ / L', font: { weight: '600', size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+/* ==========================================================================
+   8. Modals & Guided Experience
+   ========================================================================== */
+function initModals() {
+  const modalTheory = document.getElementById('modal-theory');
+  const modalQuiz = document.getElementById('modal-quiz');
+
+  document.getElementById('btn-open-theory').addEventListener('click', () => {
+    modalTheory.classList.add('active');
+    if (window.renderMathInElement) {
+      window.renderMathInElement(modalTheory, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '$', right: '$', display: false }
+        ]
+      });
+    }
+  });
+
+  document.getElementById('btn-open-quiz').addEventListener('click', () => {
+    modalQuiz.classList.add('active');
+  });
+
+  document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.close;
+      document.getElementById(targetId).classList.remove('active');
+    });
+  });
+
+  // Close modal when clicking backdrop
+  [modalTheory, modalQuiz].forEach(m => {
+    m.addEventListener('click', (e) => {
+      if (e.target === m) m.classList.remove('active');
+    });
+  });
+}
+
+/* ==========================================================================
+   9. Chapter 5 Practice Quiz
+   ========================================================================== */
+const QUIZ_QUESTIONS = [
+  {
+    title: "1. Contour Length (L) vs. End-to-End Length (R)",
+    question: "According to Jacobs, Huang & Kwon Figure 5.6, what is the fundamental difference between contour length L and end-to-end length R?",
+    options: [
+      { text: "L depends on the current folding configuration, whereas R is a fixed constant.", correct: false },
+      { text: "L is the length if the polymer were completely straight (L = n·b), while R is the straight-line distance between the two ends and depends on configuration.", correct: true },
+      { text: "R is always strictly greater than L due to thermal fluctuations.", correct: false },
+      { text: "L and R are identical in all thermodynamic ensembles.", correct: false }
+    ],
+    explanation: "Correct! The contour length L = n·b is the maximum possible theoretical length when stretched fully straight. End-to-end length R is the vector distance between chain ends, which fluctuates with microstate."
+  },
+  {
+    title: "2. Density of States for n = 2 Bonds",
+    question: "For a 2D polymer on a square lattice with n = 2 links (each link of length b), how many total microstates exist, and how many have R = 0 (hairpin fold)?",
+    options: [
+      { text: "Total = 8 states; 2 states have R = 0.", correct: false },
+      { text: "Total = 16 states; 4 states have R = 0 (Right-Left, Left-Right, Up-Down, Down-Up).", correct: true },
+      { text: "Total = 16 states; 8 states have R = 0.", correct: false },
+      { text: "Total = 4 states; 0 states have R = 0.", correct: false }
+    ],
+    explanation: "Correct! There are 4^2 = 16 possible walks. The 4 reverse folds (RL, LR, UD, DU) return to the origin (R = 0). The 8 perpendicular turns yield R = √2 b, and the 4 straight paths yield R = 2b."
+  },
+  {
+    title: "3. Maximum Entropy State",
+    question: "Why does a polymer in solution spontaneously tend toward coiled conformations rather than remaining fully extended?",
+    options: [
+      { text: "Chemical bonds prefer to minimize their kinetic energy at low temperatures.", correct: false },
+      { text: "Coiled states possess vastly more microstates (Ω), meaning higher Boltzmann entropy S = kB·ln(Ω). Thermodynamics favors states of maximum entropy.", correct: true },
+      { text: "The surrounding water molecules exert compressive hydrostatic pressure pushing the ends together.", correct: false },
+      { text: "The straight state has negative entropy.", correct: false }
+    ],
+    explanation: "Correct! For a polymer, the fully straight state has only 4 microstates, whereas coiled states have thousands or millions of possible configurations. Maximum entropy drives spontaneous coiling (entropic elasticity)."
+  },
+  {
+    title: "4. Random Walk Scaling Theorem",
+    question: "For an ideal unrestricted freely jointed polymer chain of n = 100 links with link size b = 2 nm, what is the root-mean-square (RMS) end-to-end length?",
+    options: [
+      { text: "200 nm (the full contour length)", correct: false },
+      { text: "20 nm (R_rms = √n · b = √100 · 2 nm = 10 · 2 nm)", correct: true },
+      { text: "10 nm", correct: false },
+      { text: "2 nm", correct: false }
+    ],
+    explanation: "Correct! Under the Central Limit Theorem for random walks, ⟨R²⟩ = n·b², so R_rms = √n · b. For n = 100 and b = 2 nm, R_rms = 10 · 2 nm = 20 nm, which is one-tenth of its 200 nm contour length!"
+  },
+  {
+    title: "5. Temperature Dependence of Entropic Springs",
+    question: "Unlike a conventional metal spring that weakens when heated, what happens to the stiffness of a biological entropic spring (e.g., titin or elastin) as temperature T increases?",
+    options: [
+      { text: "Its spring constant increases linearly with temperature: k_entropic = (2 kB T) / (n b²).", correct: true },
+      { text: "Its spring constant drops to zero immediately.", correct: false },
+      { text: "Its stiffness is strictly independent of temperature.", correct: false },
+      { text: "It denatures into a rigid ceramic structure.", correct: false }
+    ],
+    explanation: "Correct! Because entropic force arises from thermal kinetic agitation resisting alignment (f = T · ∂S/∂R), increasing temperature increases the entropic restoring force and stiffness!"
+  }
+];
+
+function initQuiz() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+
+  QUIZ_QUESTIONS.forEach((q, qIdx) => {
+    const card = document.createElement('div');
+    card.className = 'quiz-question-card';
+
+    const title = document.createElement('div');
+    title.className = 'quiz-question-title';
+    title.textContent = q.title;
+
+    const text = document.createElement('p');
+    text.style.fontSize = '0.88rem';
+    text.style.marginBottom = '0.75rem';
+    text.textContent = q.question;
+
+    const list = document.createElement('div');
+    list.className = 'quiz-options-list';
+
+    const feedback = document.createElement('div');
+    feedback.className = 'quiz-feedback';
+
+    q.options.forEach((opt, optIdx) => {
+      const label = document.createElement('label');
+      label.className = 'quiz-option-label';
+
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = `quiz-q-${qIdx}`;
+      radio.value = optIdx;
+
+      radio.addEventListener('change', () => {
+        if (opt.correct) {
+          feedback.className = 'quiz-feedback correct';
+          feedback.textContent = `✔ ${q.explanation}`;
+        } else {
+          feedback.className = 'quiz-feedback incorrect';
+          feedback.textContent = `✖ Incorrect. Try again! Hint: review Chapter 5 statistical mechanics primer.`;
+        }
+      });
+
+      label.appendChild(radio);
+      const span = document.createElement('span');
+      span.textContent = opt.text;
+      label.appendChild(span);
+      list.appendChild(label);
+    });
+
+    card.appendChild(title);
+    card.appendChild(text);
+    card.appendChild(list);
+    card.appendChild(feedback);
+    container.appendChild(card);
+  });
+}
+
+/* ==========================================================================
+   10. CSV Data Export
+   ========================================================================== */
+function initExport() {
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    exportDatasetToCsv();
+  });
+}
+
+function exportDatasetToCsv() {
+  const evalData = state.walkEvaluation;
+  let csv = '=== CURRENT POLYMER CONFIGURATION (FIG 5.6 MODEL) ===\n';
+  csv += `Links (n),Link Length b (nm),Contour Length L (nm),End-to-End Length R (nm),Ratio R/L,Self-Avoiding\n`;
+  csv += `${evalData.n},${evalData.b},${evalData.contourLength},${evalData.endToEndLength.toFixed(4)},${evalData.extensionRatio.toFixed(4)},${evalData.isSaw}\n\n`;
+
+  csv += '=== HINGE NODE COORDINATES ===\n';
+  csv += 'Node,X (b),Y (b)\n';
+  evalData.coords.forEach((pt, i) => {
+    csv += `${i},${pt.x},${pt.y}\n`;
+  });
+  csv += '\n';
+
+  if (state.exhaustiveData) {
+    csv += `=== EXHAUSTIVE DENSITY OF STATES (n = ${state.exhaustiveData.n}) ===\n`;
+    csv += 'R (b),Microstates Omega(R),Probability P(R),Entropy S(R)/kB\n';
+    state.exhaustiveData.densityOfStates.forEach(d => {
+      csv += `${d.r.toFixed(4)},${d.count},${d.probability.toFixed(6)},${d.entropyOverKb.toFixed(4)}\n`;
+    });
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Polymer_Statistical_Mechanics_n${evalData.n}_data.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+</script>
+
+</body>
+</html>
